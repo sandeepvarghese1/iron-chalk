@@ -168,6 +168,25 @@ function addCustomExercise(name){
   if(!exists){ customExercises.push(name); LS.set("wl_custom_exercises", customExercises); }
   return name;
 }
+/* rewrites every occurrence of oldName in logged history to newName (case-insensitive
+   match), then removes oldName from the custom list and ensures newName is present. */
+function mergeExerciseName(oldName, newName){
+  newName=(newName||"").trim();
+  if(!oldName || !newName) return false;
+  let changed=0;
+  S.history.forEach(w=>{ (w.exercises||[]).forEach(e=>{
+    if(e.name.toLowerCase()===oldName.toLowerCase()){ e.name=newName; changed++; }
+  }); });
+  if(changed>0) LS.set("wl_history", S.history);
+  customExercises = customExercises.filter(n=>n.toLowerCase()!==oldName.toLowerCase());
+  if(newName.toLowerCase()!==oldName.toLowerCase()) addCustomExercise(newName);
+  else LS.set("wl_custom_exercises", customExercises);
+  return true;
+}
+function deleteCustomExercise(name){
+  customExercises = customExercises.filter(n=>n.toLowerCase()!==name.toLowerCase());
+  LS.set("wl_custom_exercises", customExercises);
+}
 /* most recent logged sets for an exercise, across all history (newest first) */
 function lastSetsForExercise(name){
   for(const s of S.history){
@@ -1203,6 +1222,27 @@ function renderSettings(root){
       </div>
 
       <div class="setupBox">
+        <div style="font-family:var(--disp);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Manage exercise library</div>
+        <p style="color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 12px">Exercises you've added yourself. Merge a typo into an existing name (pick from the list, or type a corrected spelling), or remove one you don't want suggested anymore. Merging rewrites matching names in your logged history too, so charts and "last time" stay accurate.</p>
+        ${customExercises.length===0? `<div style="color:var(--faint);font-size:13px">No custom exercises yet — anything you add via "＋ Add new exercise" will show up here.</div>` :
+          customExercises.map((n,idx)=>`
+          <div style="background:var(--raised);border:1px solid var(--hair);border-radius:12px;padding:10px 12px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+              <span style="font-family:var(--disp);font-size:15px;font-weight:700;color:var(--chalk)">${esc(n)}</span>
+              <button data-role="del" data-idx="${idx}" aria-label="Remove" style="background:transparent;border:none;color:var(--faint);padding:2px">${I.x}</button>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <select data-role="merge" data-idx="${idx}" class="field" style="flex:1;min-width:130px;font-size:12px;padding:8px 10px">
+                <option value="">Merge into…</option>
+                ${exerciseLibrary().filter(x=>x.toLowerCase()!==n.toLowerCase()).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("")}
+              </select>
+              <input data-role="rename" data-idx="${idx}" class="field" placeholder="…or type corrected name" style="flex:1;min-width:130px;font-size:12px;padding:8px 10px">
+              <button data-role="apply" data-idx="${idx}" class="btnPrimary" style="padding:8px 14px;font-size:12px">Apply</button>
+            </div>
+          </div>`).join("")}
+      </div>
+
+      <div class="setupBox">
         <div style="font-family:var(--disp);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Manual backup</div>
         <p style="color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 12px">A safety net for switching phones, separate from the sheet. Export a file, keep it anywhere, import it on the new device.</p>
         <div style="display:flex;gap:8px">
@@ -1213,6 +1253,21 @@ function renderSettings(root){
 
     </div>`;
   root.querySelector("[data-back]").onclick=()=>{ S.screen="home"; render(); };
+  root.querySelectorAll('[data-role="del"]').forEach(b=>{
+    b.onclick=()=>{ const nm=customExercises[Number(b.dataset.idx)]; deleteCustomExercise(nm); toast(`Removed "${nm}"`); render(); };
+  });
+  root.querySelectorAll('[data-role="apply"]').forEach(b=>{
+    b.onclick=()=>{
+      const idx=Number(b.dataset.idx); const oldName=customExercises[idx];
+      const sel=root.querySelector(`[data-role="merge"][data-idx="${idx}"]`);
+      const ren=root.querySelector(`[data-role="rename"][data-idx="${idx}"]`);
+      const target=(sel.value || ren.value || "").trim();
+      if(!target){ toast("Pick a target or type a name"); return; }
+      mergeExerciseName(oldName, target);
+      toast(`Merged "${oldName}" → "${target}"`);
+      render();
+    };
+  });
   const bwIn=root.querySelector("#bwInput");
   bwIn.onchange=()=>{
     const v=bwIn.value.replace(/[^0-9.]/g,""); bwIn.value=v;
