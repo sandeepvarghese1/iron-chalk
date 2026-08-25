@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Iron & Chalk" />
+<meta name="theme-color" content="#15171C" />
+<title>Iron &amp; Chalk — Workout Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#15171C; --panel:#1D2027; --raised:#262A33; --hair:#31353F;
+    --chalk:#F1EFE9; --muted:#818794; --faint:#565C68;
+    --brass:#F2A93B; --brassDim:#7a5a20; --sage:#74BE97; --coral:#F2704B; --steel:#5B7CC4;
+    --disp:'Barlow Condensed', ui-sans-serif, system-ui, sans-serif;
+    --body:'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; background:var(--ink); }
+  body{ font-family:var(--body); color:var(--chalk); }
+  #app{ max-width:460px; margin:0 auto; min-height:100vh; min-height:100dvh; position:relative; padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
+  input{ font-family:var(--disp); }
+  input:focus{ outline:2px solid var(--brass); outline-offset:1px; }
+  button{ font-family:inherit; cursor:pointer; }
+  button:focus-visible{ outline:2px solid var(--brass); outline-offset:2px; }
+  ::placeholder{ color:var(--faint); opacity:1; }
+  .eyebrow{ color:var(--brass); font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; }
+  .h1{ font-family:var(--disp); font-size:34px; font-weight:700; letter-spacing:1px; margin:2px 0 0; line-height:1; }
+  .sectionLabel{ color:var(--faint); font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; }
+  .iconBtn{ width:38px; height:38px; border-radius:11px; background:var(--raised); border:1px solid var(--hair);
+    display:flex; align-items:center; justify-content:center; color:var(--chalk); }
+  .phaseChip{ width:46px; height:46px; border-radius:12px; border:1px solid var(--hair); background:var(--raised);
+    color:var(--muted); font-family:var(--disp); font-size:19px; font-weight:600; transition:all .15s; }
+  .phaseChip.active{ background:var(--brass); color:var(--ink); border-color:var(--brass); font-weight:700; }
+  .dayCard{ display:flex; align-items:center; justify-content:space-between; width:100%; background:var(--panel);
+    border:1px solid var(--hair); border-radius:16px; padding:16px 18px; transition:border-color .15s; text-align:left; color:var(--chalk); }
+  .dayCard:active{ border-color:var(--brassDim); }
+  .dayNum{ width:44px; height:44px; border-radius:12px; background:var(--ink); border:1px solid var(--hair);
+    display:flex; align-items:center; justify-content:center; font-family:var(--disp); font-size:22px; font-weight:700; color:var(--brass); }
+  .dayTitle{ font-family:var(--disp); font-size:20px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; }
+  .stickyHead{ position:sticky; top:0; z-index:20; background:rgba(21,23,28,.92); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--hair); padding-top:calc(env(safe-area-inset-top) + 12px); }
+  .progTrack{ height:6px; background:var(--raised); border-radius:99px; overflow:hidden; }
+  .progFill{ height:100%; background:linear-gradient(90deg,var(--brass),var(--coral)); border-radius:99px; transition:width .3s ease; }
+  .finishSm{ background:transparent; border:1px solid var(--brass); color:var(--brass); font-weight:700; font-size:13px; padding:7px 14px; border-radius:10px; }
+  .exCard{ background:var(--panel); border:1px solid var(--hair); border-radius:16px; padding:14px 14px 16px; margin-bottom:12px; transition:border-color .2s; }
+  .exCard.done{ border-color:var(--brassDim); }
+  .exName{ font-family:var(--disp); font-size:17px; font-weight:700; letter-spacing:.3px; }
+  .setRow{ display:flex; align-items:center; gap:10px; background:var(--raised); border:1px solid transparent; border-radius:12px; padding:8px 10px; transition:background .15s,border-color .15s; }
+  .setRow.done{ background:rgba(116,190,151,.08); border-color:rgba(116,190,151,.35); }
+  .setBadge{ width:22px; height:22px; border-radius:7px; background:var(--ink); color:var(--muted); font-family:var(--disp); font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .stepper{ display:flex; align-items:center; gap:6px; flex:1; }
+  .stepBtn{ width:34px; height:34px; border-radius:9px; background:var(--ink); border:1px solid var(--hair); display:flex; align-items:center; justify-content:center; color:var(--chalk); flex-shrink:0; }
+  .weightWrap{ flex:1; display:flex; align-items:baseline; justify-content:center; gap:3px; min-width:0; }
+  .weightInput{ width:100%; max-width:62px; background:transparent; border:none; color:var(--chalk); font-size:24px; font-weight:700; text-align:center; padding:0; }
+  .unitLbl{ color:var(--faint); font-size:12px; flex-shrink:0; }
+  .repsWrap{ display:flex; flex-direction:column; align-items:center; width:40px; flex-shrink:0; }
+  .repsInput{ width:40px; background:transparent; border:none; color:var(--muted); font-size:18px; font-weight:600; text-align:center; padding:0; }
+  .repsLbl{ color:var(--faint); font-size:10px; margin-top:1px; }
+  .doneBtn{ width:40px; height:40px; border-radius:11px; border:1.5px solid var(--hair); background:transparent; display:flex; align-items:center; justify-content:center; color:var(--faint); flex-shrink:0; transition:all .15s; }
+  .doneBtn.on{ background:var(--sage); border-color:var(--sage); color:var(--ink); }
+  .cardioCard{ background:var(--panel); border:1px solid var(--hair); border-radius:16px; padding:14px; margin-bottom:12px; }
+  .cardioTitle{ font-family:var(--disp); font-size:15px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; }
+  .minWrap{ display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--raised); border-radius:11px; padding:6px 12px; flex-shrink:0; min-width:66px; }
+  .minInput{ width:48px; background:transparent; border:none; color:var(--chalk); font-size:22px; font-weight:700; text-align:center; padding:0; }
+  .noteInput{ flex:1; background:var(--raised); border:1px solid var(--hair); border-radius:11px; color:var(--chalk); font-family:var(--body); font-size:16px; padding:0 12px; min-width:0; }
+  .finishLg{ width:100%; background:var(--brass); color:var(--ink); border:none; border-radius:14px; padding:15px; font-family:var(--disp); font-size:17px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; margin-top:6px; }
+  .restPill{ position:fixed; bottom:calc(18px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); background:var(--brass); color:var(--ink); border:none; border-radius:99px; padding:10px 16px; display:flex; align-items:center; gap:8px; font-family:var(--disp); font-size:15px; font-weight:700; box-shadow:0 6px 20px rgba(0,0,0,.4); z-index:40; }
+  .histCard{ background:var(--panel); border:1px solid var(--hair); border-radius:14px; padding:14px 16px; margin-bottom:10px; }
+  .statVal{ font-family:var(--disp); font-size:18px; font-weight:700; }
+  .statLbl{ color:var(--faint); font-size:10px; text-transform:uppercase; letter-spacing:.6px; margin-top:1px; }
+  .setupBox{ background:var(--panel); border:1px solid var(--hair); border-radius:14px; padding:16px; margin-bottom:14px; }
+  .field{ width:100%; background:var(--raised); border:1px solid var(--hair); border-radius:11px; color:var(--chalk); font-family:var(--body); font-size:16px; padding:11px 12px; }
+  .btnPrimary{ background:var(--brass); color:var(--ink); border:none; border-radius:11px; padding:11px 14px; font-weight:700; font-size:14px; }
+  .btnGhost{ background:transparent; color:var(--chalk); border:1px solid var(--hair); border-radius:11px; padding:11px 14px; font-weight:600; font-size:14px; }
+  .codeArea{ width:100%; height:150px; background:#0f1114; border:1px solid var(--hair); border-radius:11px; color:#cdd3dc; font-family:ui-monospace,monospace; font-size:11px; padding:10px; white-space:pre; overflow:auto; }
+  .step{ display:flex; gap:10px; margin-bottom:10px; }
+  .stepN{ width:22px; height:22px; border-radius:7px; background:var(--brass); color:var(--ink); font-family:var(--disp); font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+  .toast{ position:fixed; bottom:calc(80px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); background:var(--raised); color:var(--chalk); border:1px solid var(--hair); border-radius:10px; padding:10px 16px; font-size:13px; z-index:60; box-shadow:0 6px 20px rgba(0,0,0,.4); opacity:0; transition:opacity .2s; pointer-events:none; }
+  .toast.show{ opacity:1; }
+  .syncDot{ display:inline-block; width:8px; height:8px; border-radius:99px; margin-right:6px; }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none!important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* ===================== ICONS (inline SVG) ===================== */
+const I = {
+  back:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+  check:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+  plus:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  minus:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+  clock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  flame:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s5 4 5 9a5 5 0 0 1-10 0c0-2 1-3 1-3s0 2 2 2c0-3 2-5 2-8z"/></svg>',
+  foot:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16c0-3 1-9 4-9s3 4 3 7-1 4-3 4-4-1-4-2zM20 20c0-2-1-6-3-6s-2 3-2 5 1 3 2 3 3-1 3-2z"/></svg>',
+  bell:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 7H3s3 0 3-7M10 21h4"/></svg>',
+  hist:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>',
+  gear:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1L14.5 2h-5l-.4 2.6a7 7 0 0 0-1.7 1l-2.3-1-2 3.4L2.9 11a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1L9.5 22h5l.4-2.6a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5a7 7 0 0 0 .1-1z"/></svg>',
+  x:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+  trophy:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M9 15h6M8 20h8M12 15v5"/></svg>',
+  dumb:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8v8M4 10v4M18 8v8M20 10v4M6 12h12"/></svg>',
+  chart:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>',
+  scale:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 11a5 5 0 0 1 10 0"/><circle cx="12" cy="14" r="1"/></svg>',
+  heart:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-9.5-8.5C.8 8.2 2.7 4.3 6.6 4.1 9 4 11 5.8 12 7c1-1.2 3-3 5.4-2.9 3.9.2 5.8 4.1 4.1 8.4C19 16.65 12 21 12 21z"/></svg>',
+  flag:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18M5 4h13l-3 4 3 4H5"/></svg>',
+};
+
+/* palette hex (for inline SVG chart fills, kept in sync with :root vars above) */
+const HEX = { brass:"#F2A93B", coral:"#F2704B", sage:"#74BE97", steel:"#5B7CC4", faint:"#565C68", chalk:"#F1EFE9" };
+
+/* ===================== PLAN ===================== */
+const DAY_FOCUS = { "Day 1":"Back & Biceps", "Day 2":"Chest · Shoulders · Triceps", "Day 3":"Legs", "Freestyle":"Cardio & extras" };
+const PLAN = {
+ 1:{"Day 1":[["Neutral-grip lat pulldown",3,12],["Hamstring curl",3,15],["Lats pull down",3,12],["Rear delt flies",3,15],["Rack pull",3,8],["Single arm lats pull down",3,12],["Seated row (wide)",3,12],["Bicep curl",3,15]],
+    "Day 2":[["Flat bench press",3,12],["Leg extension",3,15],["Incline db press",3,12],["Body weight squats",3,15],["Seated shoulder press",3,12],["Front raise",3,15],["Lateral raise",3,15],["Tricep rope extension",3,15]],
+    "Day 3":[["Leg press",3,12],["Hammer curl",3,15],["Leg extension",3,12],["Incline bicep curl",3,15],["Db RDL",3,12],["Hamstring curl",3,12],["Barbell squats",3,8],["Tricep overhead extension",3,15]]},
+ 2:{"Day 1":[["Lats pull down",3,10],["Hamstring curl",3,12],["Rack pull",3,6],["Single arm lats pull down",3,10],["Bend over row",3,10],["Chest supported rear delt flies",3,12],["Seated row (wide)",3,12],["Hammer curl",3,12]],
+    "Day 2":[["Flat bench press",3,10],["Leg extension",3,12],["Incline db press",3,10],["Body weight squats",3,15],["Dips",3,10],["Front raise",3,12],["Lateral raise",3,12],["Tricep rope extension",3,12]],
+    "Day 3":[["Leg press",3,10],["Ez bar curl",3,12],["Leg extension",3,12],["Incline bicep curl",3,12],["Db RDL",3,12],["Hamstring curl",3,12],["Barbell squats",3,8],["Tricep overhead extension",3,12]]},
+ 3:{"Day 1":[["Lats pull down",3,8],["Hamstring curl",3,8],["Rack pull",3,6],["Single arm row",3,8],["Seated row",3,8],["Chest supported rear delt flies",3,12],["Straight arm pull down",3,12],["Hammer curl",3,12]],
+    "Day 2":[["Flat bench press",3,8],["Leg extension",3,12],["Incline db press",3,8],["Body weight squats",3,15],["Machine shoulder press",3,8],["Lunges",3,12],["Lateral raise",3,12],["Tricep rope extension",3,12]],
+    "Day 3":[["Leg press",3,8],["Ez bar curl",3,12],["Leg extension",3,12],["Incline bicep curl",3,12],["Db RDL",3,8],["Hamstring curl",3,12],["Barbell squats",3,8],["Tricep overhead extension",3,12]]},
+ 4:{"Day 1":[["Neutral-grip lat pulldown",3,8],["Hamstring curl",3,8],["Rack pull",3,6],["Lats pull down",3,8],["Seated row",3,8],["Chest supported rear delt flies",3,12],["Straight arm pull down",3,12],["Hammer curl",3,12]],
+    "Day 2":[["Flat bench press",3,6],["Leg extension",3,12],["Incline db press",3,8],["Body weight squats",3,15],["Machine shoulder press",3,8],["Lunges",3,12],["Lateral raise",3,12],["Tricep rope extension",3,12]],
+    "Day 3":[["Leg press",3,8],["Ez bar curl",3,12],["Leg extension",3,12],["Incline bicep curl",3,12],["Db RDL",3,8],["Hamstring curl",3,12],["Barbell squats",3,6],["Tricep overhead extension",3,12]]},
+ 5:{"Day 1":[["Rack pull",3,6],["Neutral-grip lat pulldown",3,8],["Lats pull down",3,8],["Seated row",3,8],["Single arm pull down",3,8],["Db upright row",3,8],["Bicep curl",3,8]],
+    "Day 2":[["Bench press",3,6],["Incline barbell press",3,8],["Smith shoulder press",3,8],["Lateral raise",3,8],["Front raise",3,8],["Skull crusher",3,8],["Tricep rope extension",3,8]],
+    "Day 3":[["Squats",3,6],["Leg press",3,8],["RDL (db)",3,8],["Lunges",3,8],["Hamstring curl",3,8],["Leg extension",3,8],["Leg raises",3,10]]},
+ 6:{"Day 1":[["Rack pull",3,3],["Neutral-grip lat pulldown",3,8],["Lats pull down",3,8],["Seated row",3,8],["Bend over row",3,8],["Db upright row",3,8],["Bicep curl",3,8]],
+    "Day 2":[["Bench press",3,3],["Incline barbell press",3,8],["Smith shoulder press",3,8],["Dips",3,8],["Lateral raise",3,8],["Skull crusher",3,8],["Tricep rope extension",3,8]],
+    "Day 3":[["Squats",3,3],["Leg press",3,8],["RDL (db)",3,8],["Lunges",3,8],["Hamstring curl",3,8],["Leg extension",3,8],["Leg raises",3,10]]},
+};
+const PHASE_NOTE = {
+ 1:"Super-set pairs. Same load across all 3 sets, add a little each week. Warm-up sets don't count.",
+ 2:"Super-set pairs. Same load across 3 sets, keep nudging the load up.",
+ 3:"Super-set pairs. Reps dropping, loads climbing.",
+ 4:"Super-set pairs. Heaviest of the hypertrophy blocks.",
+ 5:"Single lifts, no super-sets. Focus on getting the strength up.",
+ 6:"Single lifts. Low reps on the main lift — go heavy, chase strength.",
+};
+
+/* ===================== EXERCISE LIBRARY ===================== */
+/* Base list = every exercise across all phases/days. Custom additions are
+   persisted under wl_custom_exercises and merged in. */
+const BASE_EXERCISES = (function(){
+  const set={};
+  Object.keys(PLAN).forEach(function(p){ Object.keys(PLAN[p]).forEach(function(d){
+    PLAN[p][d].forEach(function(e){ set[e[0]]=true; }); }); });
+  return Object.keys(set);
+})();
+let customExercises = [];
+function exerciseLibrary(){
+  const seen={}, out=[];
+  BASE_EXERCISES.concat(customExercises).forEach(function(n){
+    const k=n.toLowerCase(); if(n && !seen[k]){ seen[k]=1; out.push(n); }
+  });
+  return out.sort(function(a,b){ return a.toLowerCase()<b.toLowerCase()?-1:1; });
+}
+function addCustomExercise(name){
+  name=(name||"").trim(); if(!name) return "";
+  const exists = BASE_EXERCISES.concat(customExercises).some(function(n){ return n.toLowerCase()===name.toLowerCase(); });
+  if(!exists){ customExercises.push(name); LS.set("wl_custom_exercises", customExercises); }
+  return name;
+}
+/* most recent logged sets for an exercise, across all history (newest first) */
+function lastSetsForExercise(name){
+  for(const s of S.history){
+    const f=(s.exercises||[]).find(function(e){ return e.name===name; });
+    if(f && f.sets && f.sets.length) return f.sets.map(function(x){ return {w:x.w, r:x.r}; });
+  }
+  return null;
+}
+/* build an <option> list for a select, marking the current value selected */
+function libOptions(current){
+  const lib=exerciseLibrary();
+  if(current && !lib.some(function(n){ return n===current; })) lib.push(current);
+  let html="";
+  lib.sort(function(a,b){ return a.toLowerCase()<b.toLowerCase()?-1:1; }).forEach(function(n){
+    html+=`<option value="${esc(n)}" ${n===current?"selected":""}>${esc(n)}</option>`;
+  });
+  html+=`<option value="__add__">➕ Add new exercise…</option>`;
+  return html;
+}
+
+/* ===================== CALORIE ESTIMATE (MET-based) ===================== */
+/* Two tiers of accuracy, both clearly labelled as estimates:
+   1) ACSM metabolic equations — used when a cardio interval has a speed,
+      since speed+incline let us compute real VO2, not a table lookup.
+   2) Flat MET values — used for resistance sets and for cardio logged
+      without intervals (just minutes). Standard Compendium-of-Physical-
+      Activities-style values, not individualised.                       */
+const MET_RESISTANCE = 5.0;      // weight training, moderate–vigorous effort
+const MET_CARDIO_GENERIC = 5.5;  // unspecified moderate cardio
+const RESIST_MIN_PER_SET = 1.5;  // fallback when no session duration is known
+
+function kcalFlat(met, weightKg, minutes){
+  if(!weightKg || minutes<=0) return 0;
+  return met * weightKg * (minutes/60);
+}
+function acsmKcalPerMin(speedKmh, inclinePct, weightKg){
+  if(!weightKg || speedKmh<=0) return 0;
+  const speedM = speedKmh*1000/60;         // m/min
+  const grade = (inclinePct||0)/100;       // fraction
+  const running = speedKmh >= 6.4;         // ~4mph jog threshold
+  const vo2 = running
+    ? 0.2*speedM + 0.9*speedM*grade + 3.5
+    : 0.1*speedM + 1.8*speedM*grade + 3.5; // ml/kg/min
+  return vo2 * weightKg * 0.005;           // 5 kcal / L O2, /1000 mL→L
+}
+function cardioBlockMinutes(block){
+  if(block && block.intervals && block.intervals.length)
+    return block.intervals.reduce((s,iv)=>s+(parseFloat(iv.min)||0),0);
+  return block ? (parseFloat(block.min)||0) : 0;
+}
+function cardioBlockKcal(block, weightKg){
+  if(!block || !weightKg) return 0;
+  if(block.intervals && block.intervals.length){
+    return block.intervals.reduce((sum,iv)=>{
+      const m=parseFloat(iv.min)||0, sp=parseFloat(iv.speed)||0, inc=parseFloat(iv.incline)||0;
+      if(m<=0) return sum;
+      return sum + (sp>0 ? acsmKcalPerMin(sp,inc,weightKg)*m : kcalFlat(MET_CARDIO_GENERIC,weightKg,m));
+    },0);
+  }
+  return kcalFlat(MET_CARDIO_GENERIC, weightKg, parseFloat(block.min)||0);
+}
+/* clean = a finished workout object (post-finishWorkout shape) */
+function estimateSessionKcal(clean, weightKg){
+  if(!weightKg) return null;
+  const blocks=[];
+  if(clean.warmup) blocks.push(clean.warmup);
+  if(clean.cardio) blocks.push(clean.cardio);
+  (clean.cardios||[]).forEach(c=>blocks.push(c));
+  let kcal=0, cardioMin=0;
+  blocks.forEach(b=>{ kcal+=cardioBlockKcal(b,weightKg); cardioMin+=cardioBlockMinutes(b); });
+  let resistMin;
+  if(clean.durationMin!=null) resistMin=Math.max(0, clean.durationMin-cardioMin);
+  else resistMin=(clean.exercises||[]).reduce((n,e)=>n+e.sets.length,0)*RESIST_MIN_PER_SET;
+  kcal += kcalFlat(MET_RESISTANCE, weightKg, resistMin);
+  return Math.round(kcal);
+}
+
+/* ===================== STORAGE ===================== */
+/* Persists via Claude's window.storage when running as an artifact inside
+   Claude, and via the browser's localStorage when opened standalone. A
+   synchronous in-memory cache fronts the async backend so the rest of the
+   app reads/writes without awaiting. */
+const Backend = (function(){
+  const hasWS = (typeof window!=="undefined") && window.storage && typeof window.storage.get==="function";
+  function fire(p){ if(p && typeof p.catch==="function") p.catch(function(){}); }
+  return {
+    hasWS: hasWS,
+    async loadAll(){
+      const out={};
+      if(hasWS){
+        try{
+          const res = await window.storage.list("wl_");
+          const keys = (res && res.keys) ? res.keys : [];
+          for(const k of keys){ try{ const r=await window.storage.get(k); if(r) out[k]=r.value; }catch(e){} }
+        }catch(e){}
+      } else {
+        try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i);
+          if(k && k.indexOf("wl_")===0) out[k]=localStorage.getItem(k); } }catch(e){}
+      }
+      return out;
+    },
+    set(k,v){ if(hasWS){ try{ fire(window.storage.set(k,v)); }catch(e){} } else { try{ localStorage.setItem(k,v); }catch(e){} } },
+    del(k){ if(hasWS){ try{ fire(window.storage.delete(k)); }catch(e){} } else { try{ localStorage.removeItem(k); }catch(e){} } },
+  };
+})();
+
+const cache = {};
+const LS = {
+  get(k, d){ const v=cache[k]; if(v==null) return d; try{ return JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ const s=JSON.stringify(v); cache[k]=s; Backend.set(k,s); },
+  raw(k, d){ const v=cache[k]; return v==null? d : v; },
+  setRaw(k, v){ cache[k]=v; Backend.set(k,v); },
+  del(k){ delete cache[k]; Backend.del(k); },
+};
+
+/* ===================== STATE ===================== */
+const S = {
+  screen:"home", phase:1, day:null, session:null,
+  history:[], unit:"kg", sheetUrl:"",
+  bodyweight:"", checkins:[],
+  rest:null, restTimer:null, draftTimer:null,
+};
+
+let dashboardLift = null;
+
+/* ===================== HELPERS ===================== */
+const uid = ()=> Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const todayKey = ()=> new Date().toISOString().slice(0,10);
+const fmtDate = iso => new Date(iso).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const app = ()=> document.getElementById("app");
+
+function toast(msg){
+  const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+function buildSession(phase, day){
+  if(day==="Freestyle") return { id:uid(), phase, day:"Freestyle", date:todayKey(), unit:S.unit, startedAt:Date.now(), items:[] };
+  const prev = S.history.find(s=>s.phase===phase && s.day===day);
+  const lastMap={}; if(prev) prev.exercises.forEach(e=>{ lastMap[e.name]=e.sets; });
+  const exercises = PLAN[phase][day].map(([name,sets,reps])=>{
+    const last = lastMap[name];
+    return { name, targetSets:sets, targetReps:reps, last: last? last.map(s=>({w:s.w,r:s.r})):null,
+      sets: Array.from({length:sets},(_,i)=>({ w: last&&last[i]!=null? String(last[i].w??""):"", r:String(reps), done:false, af:i>0 })) };
+  });
+  return { id:uid(), phase, day, date:todayKey(), unit:S.unit, startedAt:Date.now(),
+    warmup:{min:"",note:"",intervals:[]}, cardio:{min:"",note:"",intervals:[]}, exercises, extras:[] };
+}
+
+function saveDraft(){
+  if(!S.session) return;
+  clearTimeout(S.draftTimer);
+  S.draftTimer=setTimeout(()=>{ LS.set("wl_draft_"+S.session.phase+"_"+S.session.day, S.session); },600);
+}
+function loadDraft(phase,day){
+  const d = LS.get("wl_draft_"+phase+"_"+day, null);
+  if(d && d.date===todayKey()) return d;
+  return null;
+}
+
+/* ===================== SHEET SYNC ===================== */
+function workoutPayload(w){
+  const p={ id:w.id, date:w.date, phase:w.phase, day:w.day, focus:DAY_FOCUS[w.day]||"", unit:w.unit,
+    durationMin:w.durationMin!=null?w.durationMin:"", estKcal:w.estKcal!=null?w.estKcal:"",
+    exercises:(w.exercises||[]).map(e=>({ name:e.name, sets:e.sets.map(s=>({ w:Number(s.w)||0, r:Number(s.r)||0 })) })) };
+  if(w.cardios) p.cardios=w.cardios;
+  if(w.warmup) p.warmup=w.warmup;
+  if(w.cardio) p.cardio=w.cardio;
+  return p;
+}
+async function postToSheet(payload){
+  if(!S.sheetUrl) return false;
+  try{
+    await fetch(S.sheetUrl,{ method:"POST", mode:"no-cors",
+      headers:{ "Content-Type":"text/plain;charset=utf-8" }, body:JSON.stringify(payload) });
+    return true; // no-cors → opaque; resolution implies request was sent
+  }catch(e){ return false; } // network error (e.g. offline)
+}
+async function syncPending(){
+  if(!S.sheetUrl) return;
+  const pending = S.history.filter(w=>!w.synced);
+  if(pending.length===0) return;
+  let ok=0;
+  for(const w of pending){
+    const done = await postToSheet(workoutPayload(w));
+    if(done){ w.synced=true; ok++; }
+  }
+  if(ok>0){ LS.set("wl_history",S.history); if(S.screen==="settings") render(); }
+}
+async function resyncAll(){
+  if(!S.sheetUrl){ toast("Add your Sheet link first"); return; }
+  if(S.history.length===0){ toast("Nothing to sync yet"); return; }
+  toast("Syncing "+S.history.length+" workout(s)…");
+  const done = await postToSheet(S.history.map(workoutPayload));
+  if(done){ S.history.forEach(w=>w.synced=true); LS.set("wl_history",S.history); toast("Synced to Google Sheet"); }
+  else toast("Sync failed — check connection");
+  render();
+}
+async function syncCheckins(){
+  if(!S.sheetUrl) return;
+  const pending=S.checkins.filter(c=>!c.synced);
+  if(pending.length===0) return;
+  const ok=await postToSheet({ kind:"checkins", items:pending });
+  if(ok){ pending.forEach(c=>c.synced=true); LS.set("wl_checkins",S.checkins); }
+}
+
+/* ===================== BACKUP EXPORT / IMPORT ===================== */
+function exportBackup(){
+  const blob = new Blob([JSON.stringify({app:"iron-and-chalk",v:1,history:S.history},null,2)],{type:"application/json"});
+  const u=URL.createObjectURL(blob); const a=document.createElement("a");
+  a.href=u; a.download="workout-backup-"+todayKey()+".json"; a.click(); URL.revokeObjectURL(u);
+}
+function importBackup(file){
+  const r=new FileReader();
+  r.onload=()=>{ try{
+    const d=JSON.parse(r.result); const inc = Array.isArray(d)? d : d.history;
+    if(!Array.isArray(inc)) throw 0;
+    const byId={}; [...S.history,...inc].forEach(w=>{ byId[w.id]=w; });
+    S.history=Object.values(byId).sort((a,b)=> (a.date<b.date?1:-1));
+    LS.set("wl_history",S.history); toast("Imported "+inc.length+" workout(s)"); render(); syncPending();
+  }catch(e){ toast("Couldn't read that file"); } };
+  r.readAsText(file);
+}
+
+/* ===================== RENDER ===================== */
+function render(){
+  const root=app(); root.innerHTML="";
+  if(S.screen==="home") renderHome(root);
+  else if(S.screen==="workout") renderWorkout(root);
+  else if(S.screen==="history") renderHistory(root);
+  else if(S.screen==="settings") renderSettings(root);
+  else if(S.screen==="checkin") renderCheckin(root);
+  else if(S.screen==="dashboard") renderDashboard(root);
+  window.scrollTo(0,0);
+}
+
+function daysSince(dateStr){
+  if(!dateStr) return Infinity;
+  return Math.floor((Date.now()-new Date(dateStr+"T00:00:00").getTime())/86400000);
+}
+function renderHome(root){
+  const last=S.history[0];
+  const pending=S.history.filter(w=>!w.synced).length;
+  const dot = !S.sheetUrl ? "var(--faint)" : (pending? "var(--coral)":"var(--sage)");
+  const dotTxt = !S.sheetUrl ? "Sheet not linked" : (pending? pending+" to sync":"Synced");
+  const lastCheckin=S.checkins[S.checkins.length-1];
+  const dueDays=daysSince(lastCheckin?lastCheckin.date:null);
+  const due = dueDays>=7;
+  root.innerHTML = `
+    <header style="padding:calc(env(safe-area-inset-top) + 20px) 20px 8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div class="eyebrow">Strength Log</div><h1 class="h1">IRON &amp; CHALK</h1></div>
+        <div style="display:flex;gap:8px">
+          <div style="display:flex;background:var(--raised);border-radius:10px;padding:3px;border:1px solid var(--hair)">
+            ${["kg","lb"].map(u=>`<button data-unit="${u}" style="border:none;background:${S.unit===u?"var(--brass)":"transparent"};color:${S.unit===u?"var(--ink)":"var(--muted)"};padding:4px 9px;border-radius:7px;font-size:12px;font-weight:700">${u}</button>`).join("")}
+          </div>
+          <button class="iconBtn" data-go="dashboard" aria-label="Dashboard">${I.chart}</button>
+          <button class="iconBtn" data-go="history" aria-label="History">${I.hist}</button>
+          <button class="iconBtn" data-go="settings" aria-label="Settings">${I.gear}</button>
+        </div>
+      </div>
+      <div style="color:var(--faint);font-size:13px;margin-top:10px">
+        ${ last? `Last · Phase ${last.phase} · ${esc(last.day)} · ${fmtDate(last.date)}` : "No sessions logged yet. Pick a day to start." }
+      </div>
+      <div style="font-size:12px;margin-top:6px;color:var(--muted)"><span class="syncDot" style="background:${dot}"></span>${dotTxt}</div>
+    </header>
+    <section style="padding:6px 20px 4px">
+      <button data-go="checkin" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;background:${due?"rgba(242,112,75,0.08)":"var(--panel)"};border:1px solid ${due?"var(--coral)":"var(--hair)"};border-radius:14px;padding:12px 16px;text-align:left;color:var(--chalk)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;background:${due?"rgba(242,112,75,0.15)":"var(--raised)"};display:flex;align-items:center;justify-content:center;color:${due?"var(--coral)":"var(--muted)"}">${I.scale}</div>
+          <div>
+            <div style="font-family:var(--disp);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${due?"Check-in due":"Weekly check-in"}</div>
+            <div style="color:var(--faint);font-size:12px;margin-top:1px">${lastCheckin? `Last: ${lastCheckin.weight} kg · ${dueDays}d ago` : "No check-ins yet"}</div>
+          </div>
+        </div>
+        <span style="color:${due?"var(--coral)":"var(--faint)"};font-size:20px">›</span>
+      </button>
+    </section>
+    <section style="padding:14px 20px 4px">
+      <div class="sectionLabel">Phase</div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        ${[1,2,3,4,5,6].map(p=>`<button class="phaseChip ${p===S.phase?"active":""}" data-phase="${p}">${p}</button>`).join("")}
+      </div>
+      <p style="color:var(--muted);font-size:13px;line-height:1.5;margin-top:14px">${PHASE_NOTE[S.phase]}</p>
+    </section>
+    <section style="padding:12px 20px 28px">
+      <div class="sectionLabel">Choose a day</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+        ${["Day 1","Day 2","Day 3"].map(d=>`
+          <button class="dayCard" data-day="${d}">
+            <div style="display:flex;align-items:center;gap:14px">
+              <div class="dayNum">${d.split(" ")[1]}</div>
+              <div><div class="dayTitle">${d}</div><div style="color:var(--muted);font-size:13px;margin-top:2px">${DAY_FOCUS[d]}</div></div>
+            </div>
+            <div style="text-align:right;color:var(--faint);font-size:12px">
+              <div style="color:var(--brass);font-family:var(--disp);font-size:22px;font-weight:700">${PLAN[S.phase][d].length}</div>lifts
+            </div>
+          </button>`).join("")}
+        <button class="dayCard" data-day="Freestyle" style="border-style:dashed">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div class="dayNum" style="color:var(--steel)">${I.foot}</div>
+            <div><div class="dayTitle">Freestyle</div><div style="color:var(--muted);font-size:13px;margin-top:2px">Cardio &amp; anything — you build it</div></div>
+          </div>
+          <div style="text-align:right;color:var(--faint);font-size:12px">
+            <div style="color:var(--steel);font-family:var(--disp);font-size:22px;font-weight:700">＋</div>open
+          </div>
+        </button>
+      </div>
+    </section>`;
+  root.querySelectorAll("[data-unit]").forEach(b=>b.onclick=()=>{ S.unit=b.dataset.unit; LS.setRaw("wl_unit",S.unit); render(); });
+  root.querySelectorAll("[data-phase]").forEach(b=>b.onclick=()=>{ S.phase=Number(b.dataset.phase); LS.set("wl_phase",S.phase); render(); });
+  root.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.day));
+  root.querySelector('[data-go="history"]').onclick=()=>{ S.screen="history"; render(); };
+  root.querySelector('[data-go="settings"]').onclick=()=>{ S.screen="settings"; render(); };
+  root.querySelector('[data-go="dashboard"]').onclick=()=>{ S.screen="dashboard"; render(); };
+  root.querySelector('[data-go="checkin"]').onclick=()=>{ S.screen="checkin"; render(); };
+}
+
+function openDay(day){
+  S.session = loadDraft(S.phase,day) || buildSession(S.phase,day);
+  if(!S.session.startedAt) S.session.startedAt=Date.now();
+  S.session.unit=S.unit; S.day=day; S.screen="workout"; render();
+}
+
+function renderWorkout(root){
+  const s=S.session;
+  const free = s.day==="Freestyle";
+  const titleHtml = free ? "Freestyle" : `Phase ${s.phase} · ${esc(s.day)}`;
+  root.innerHTML = `
+    <div class="stickyHead">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px">
+        <button class="iconBtn" data-back aria-label="Back">${I.back}</button>
+        <div style="text-align:center">
+          <div style="font-family:var(--disp);font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">${titleHtml}</div>
+          <div style="color:var(--muted);font-size:11px">${DAY_FOCUS[s.day]||""}</div>
+        </div>
+        <button class="finishSm" data-finish>Finish</button>
+      </div>
+      <div style="padding:0 16px 10px">
+        <div class="progTrack"><div class="progFill" id="progFill" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:5px">
+          <span id="progTxt" style="color:var(--faint);font-size:11px">0 / 0</span>
+          <span id="progPct" style="color:var(--brass);font-size:11px;font-weight:700">0%</span>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 16px 96px" id="wbody"></div>`;
+
+  const body=root.querySelector("#wbody");
+
+  if(free){
+    const items=document.createElement("div"); items.id="freeItems";
+    body.appendChild(items);
+    renderItems(s.items, items);
+    body.appendChild(addButtons(s.items, "freeItems"));
+  } else {
+    body.appendChild(cardioEl("warmup", s.warmup));
+    s.exercises.forEach((ex)=> body.appendChild(exerciseEl(ex,{swap:true})));
+    // user extras (added exercises / cardio)
+    const extras=document.createElement("div"); extras.id="extraItems";
+    body.appendChild(extras);
+    renderItems(s.extras, extras);
+    body.appendChild(addButtons(s.extras, "extraItems"));
+    body.appendChild(cardioEl("steady", s.cardio));
+  }
+
+  const fin=document.createElement("button"); fin.className="finishLg"; fin.textContent="Finish & save workout";
+  fin.onclick=finishWorkout; body.appendChild(fin);
+
+  root.querySelector("[data-back]").onclick=()=>{ S.screen="home"; render(); };
+  root.querySelector("[data-finish]").onclick=finishWorkout;
+  updateProgress();
+}
+
+function addButtons(arr, containerId){
+  const wrap=document.createElement("div");
+  wrap.style.cssText="display:flex;gap:10px;margin:2px 0 14px";
+  wrap.innerHTML=`
+    <button class="btnGhost" data-add-cardio style="flex:1;padding:13px">＋ Add cardio</button>
+    <button class="btnGhost" data-add-ex style="flex:1;padding:13px">＋ Add exercise</button>`;
+  wrap.querySelector("[data-add-cardio]").onclick=()=>addItem(arr,"cardio",containerId);
+  wrap.querySelector("[data-add-ex]").onclick=()=>addItem(arr,"exercise",containerId);
+  return wrap;
+}
+
+function renderItems(arr, container){
+  container.innerHTML="";
+  if(arr.length===0 && container.id==="freeItems"){
+    const empty=document.createElement("div");
+    empty.style.cssText="text-align:center;color:var(--faint);font-size:13px;padding:24px 8px 20px;line-height:1.6";
+    empty.innerHTML="Nothing added yet.<br>Use the buttons below to add cardio or an exercise.";
+    container.appendChild(empty);
+    return;
+  }
+  arr.forEach((it,idx)=>{
+    if(it.type==="exercise") container.appendChild(exerciseEl(it,{freestyle:true, arr:arr, container:container, onRemove:()=>removeItem(arr,idx,container)}));
+    else container.appendChild(cardioEntryEl(it,()=>removeItem(arr,idx,container)));
+  });
+}
+
+function addItem(arr, type, containerId){
+  if(type==="cardio") arr.push({ type:"cardio", name:"", min:"", note:"", intervals:[] });
+  else arr.push({ type:"exercise", name:"", targetReps:"", sets:[{w:"",r:"",done:false,af:false},{w:"",r:"",done:false,af:true},{w:"",r:"",done:false,af:true}] });
+  saveDraft();
+  const container=document.getElementById(containerId);
+  renderItems(arr, container);
+  updateProgress();
+  const sels=container.querySelectorAll("[data-name]");
+  const el=sels[sels.length-1]; if(el && el.focus) el.focus();
+}
+
+function removeItem(arr, idx, container){
+  arr.splice(idx,1); saveDraft();
+  renderItems(arr, container); updateProgress();
+}
+
+/* ---- shared cardio block (simple min+note, or interval-by-interval) ---- */
+function syncBlockMin(data){
+  if(data.intervals && data.intervals.length)
+    data.min = String(data.intervals.reduce((s,iv)=>s+(parseFloat(iv.min)||0),0));
+}
+function intervalSummary(data){
+  const ivs=(data.intervals||[]).filter(iv=>(parseFloat(iv.min)||0)>0);
+  if(!ivs.length) return "";
+  let totalMin=0, spW=0, incW=0, hasSpeed=false;
+  ivs.forEach(iv=>{
+    const m=parseFloat(iv.min)||0, sp=parseFloat(iv.speed)||0, inc=parseFloat(iv.incline)||0;
+    totalMin+=m; spW+=sp*m; incW+=inc*m; if(sp>0) hasSpeed=true;
+  });
+  const avgSp=(spW/totalMin).toFixed(1), avgInc=(incW/totalMin).toFixed(1);
+  return `${totalMin} min total${hasSpeed?`  ·  avg ${avgSp} km/h`:""}${incW>0?`  ·  avg ${avgInc}% incline`:""}`;
+}
+function cardioBlockEl(data, cfg){
+  if(!data.intervals) data.intervals=[];
+  const hasIv = data.intervals.length>0;
+  const el=document.createElement("div"); el.className="cardioCard";
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;color:${cfg.accent}">${cfg.icon}
+        ${cfg.nameEditable
+          ? `<input data-name class="cardioTitle" style="background:transparent;border:none;border-bottom:1px solid var(--hair);color:var(--chalk);flex:1;min-width:0;padding:2px 0;font-size:16px" placeholder="Cardio (e.g. Treadmill)" value="${esc(data.name||"")}">`
+          : `<span class="cardioTitle" style="color:var(--chalk)">${cfg.title}</span>`}
+      </div>
+      ${cfg.removable?`<button data-remove aria-label="Remove" style="background:transparent;border:none;color:var(--faint);padding:2px;flex-shrink:0">${I.x}</button>`:""}
+    </div>
+    <div data-simple style="display:${hasIv?"none":"flex"};gap:10px;align-items:stretch">
+      <div class="minWrap"><input class="minInput" inputmode="numeric" value="${esc(data.min)}" placeholder="0"><span style="color:var(--faint);font-size:10px">min</span></div>
+      <input class="noteInput" data-note value="${esc(data.note)}" placeholder="${cfg.placeholder}">
+    </div>
+    <div data-ivblock style="display:${hasIv?"block":"none"}">
+      <div data-ivrows style="display:flex;flex-direction:column;gap:8px"></div>
+      <div data-ivsummary style="color:var(--faint);font-size:11px;margin-top:8px">${intervalSummary(data)}</div>
+      <input class="noteInput" data-note2 value="${esc(data.note)}" placeholder="notes (e.g. HR 145)" style="margin-top:8px;width:100%">
+    </div>
+    <button data-addiv class="btnGhost" style="width:100%;padding:8px;font-size:12px;margin-top:10px">＋ ${hasIv?"Interval":"Add intervals (speed & incline)"}</button>`;
+
+  const minIn=el.querySelector(".minInput");
+  if(minIn) minIn.oninput=()=>{ minIn.value=minIn.value.replace(/[^0-9]/g,""); data.min=minIn.value; saveDraft(); updateProgress(); };
+  el.querySelectorAll("[data-note],[data-note2]").forEach(n=>{ n.oninput=()=>{ data.note=n.value;
+    el.querySelectorAll("[data-note],[data-note2]").forEach(o=>{ if(o!==n) o.value=n.value; }); saveDraft(); }; });
+  if(cfg.nameEditable){ const nameIn=el.querySelector("[data-name]"); nameIn.oninput=()=>{ data.name=nameIn.value; saveDraft(); }; }
+  if(cfg.removable) el.querySelector("[data-remove]").onclick=cfg.onRemove;
+
+  const rowsWrap=el.querySelector("[data-ivrows]");
+  function refreshSummary(){ syncBlockMin(data); const s=el.querySelector("[data-ivsummary]"); if(s) s.textContent=intervalSummary(data); updateProgress(); }
+  function buildRows(){
+    rowsWrap.innerHTML="";
+    data.intervals.forEach((iv,idx)=>{
+      const row=document.createElement("div");
+      row.style.cssText="display:flex;gap:8px;align-items:center;background:var(--raised);border:1px solid var(--hair);border-radius:11px;padding:8px 10px";
+      row.innerHTML=`
+        <div class="setBadge">${idx+1}</div>
+        <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0">
+          <input data-min inputmode="numeric" value="${esc(iv.min)}" placeholder="0" style="width:100%;background:transparent;border:none;color:var(--chalk);font-family:var(--disp);font-size:16px;font-weight:700;text-align:center">
+          <span style="color:var(--faint);font-size:9px">min</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0">
+          <input data-sp inputmode="decimal" value="${esc(iv.speed)}" placeholder="0" style="width:100%;background:transparent;border:none;color:var(--chalk);font-family:var(--disp);font-size:16px;font-weight:700;text-align:center">
+          <span style="color:var(--faint);font-size:9px">km/h</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0">
+          <input data-inc inputmode="decimal" value="${esc(iv.incline)}" placeholder="0" style="width:100%;background:transparent;border:none;color:var(--chalk);font-family:var(--disp);font-size:16px;font-weight:700;text-align:center">
+          <span style="color:var(--faint);font-size:9px">% incline</span>
+        </div>
+        <button data-rm aria-label="Remove interval" style="background:transparent;border:none;color:var(--faint);flex-shrink:0">${I.x}</button>`;
+      const minI=row.querySelector("[data-min]"), spI=row.querySelector("[data-sp]"), incI=row.querySelector("[data-inc]");
+      minI.oninput=()=>{ minI.value=minI.value.replace(/[^0-9.]/g,""); iv.min=minI.value; refreshSummary(); saveDraft(); };
+      spI.oninput=()=>{ spI.value=spI.value.replace(/[^0-9.]/g,""); iv.speed=spI.value; refreshSummary(); saveDraft(); };
+      incI.oninput=()=>{ incI.value=incI.value.replace(/[^0-9.]/g,""); iv.incline=incI.value; refreshSummary(); saveDraft(); };
+      row.querySelector("[data-rm]").onclick=()=>{
+        data.intervals.splice(idx,1); syncBlockMin(data); saveDraft();
+        if(data.intervals.length===0){ const nc=cardioBlockEl(data,cfg); el.replaceWith(nc); updateProgress(); }
+        else { buildRows(); refreshSummary(); }
+      };
+      rowsWrap.appendChild(row);
+    });
+  }
+  buildRows();
+  el.querySelector("[data-addiv]").onclick=()=>{
+    data.intervals.push({min:"",speed:"",incline:""}); saveDraft();
+    if(data.intervals.length===1){ const nc=cardioBlockEl(data,cfg); el.replaceWith(nc); updateProgress(); }
+    else { buildRows(); refreshSummary(); }
+  };
+  return el;
+}
+function cardioEntryEl(it, onRemove){
+  return cardioBlockEl(it, { title:"Cardio", icon:I.foot, accent:"var(--steel)",
+    placeholder:"e.g. 12% incline · 5.5 / HR 140", nameEditable:true, removable:true, onRemove });
+}
+
+function propagateFirstSet(ex, card){
+  const src=ex.sets[0]; if(!src) return;
+  for(let i=1;i<ex.sets.length;i++){
+    const st=ex.sets[i];
+    if(st.af!==false){
+      st.w=src.w; st.r=src.r;
+      const row=card.querySelector('.setRow[data-set="'+i+'"]');
+      if(row){ const w=row.querySelector('.weightInput'), r=row.querySelector('.repsInput');
+        if(w) w.value=src.w; if(r) r.value=src.r; }
+    }
+  }
+}
+
+function setRowEl(ex, si, card){
+  const st=ex.sets[si];
+  const row=document.createElement("div");
+  row.className="setRow"+(st.done?" done":""); row.dataset.set=si;
+  row.innerHTML=`
+    <div class="setBadge">${si+1}</div>
+    <div class="stepper">
+      <button class="stepBtn" data-bump="-2.5" aria-label="Less">${I.minus}</button>
+      <div class="weightWrap"><input class="weightInput" inputmode="decimal" value="${esc(st.w)}" placeholder="0"><span class="unitLbl">${S.session.unit}</span></div>
+      <button class="stepBtn" data-bump="2.5" aria-label="More">${I.plus}</button>
+    </div>
+    <div class="repsWrap"><input class="repsInput" inputmode="numeric" value="${esc(st.r)}" placeholder="—"><span class="repsLbl">reps</span></div>
+    <button class="doneBtn ${st.done?"on":""}" data-done aria-label="Mark set done">${I.check}</button>`;
+  const wIn=row.querySelector(".weightInput"), rIn=row.querySelector(".repsInput");
+  wIn.oninput=()=>{ wIn.value=wIn.value.replace(/[^0-9.]/g,""); st.w=wIn.value;
+    if(si===0) propagateFirstSet(ex,card); else st.af=false; saveDraft(); };
+  rIn.oninput=()=>{ rIn.value=rIn.value.replace(/[^0-9]/g,""); st.r=rIn.value;
+    if(si===0) propagateFirstSet(ex,card); else st.af=false; saveDraft(); };
+  row.querySelectorAll("[data-bump]").forEach(b=>b.onclick=()=>{
+    const base=parseFloat(st.w||"0")||0;
+    const nv=Math.max(0,Math.round((base+parseFloat(b.dataset.bump))*4)/4);
+    st.w=String(nv); wIn.value=String(nv);
+    if(si===0) propagateFirstSet(ex,card); else st.af=false; saveDraft();
+  });
+  row.querySelector("[data-done]").onclick=()=>{
+    st.done=!st.done;
+    row.classList.toggle("done",st.done);
+    row.querySelector("[data-done]").classList.toggle("on",st.done);
+    card.classList.toggle("done", ex.sets.every(x=>x.done));
+    saveDraft(); updateProgress(); startRest();
+  };
+  return row;
+}
+
+/* selName = a dropdown for choosing/swapping an exercise from the library */
+function nameSelect(current){
+  return `<select data-name class="exName" style="background:transparent;border:none;color:var(--chalk);font-family:var(--disp);font-weight:700;font-size:16px;flex:1;min-width:0;padding:2px 20px 2px 0;-webkit-appearance:none;appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 fill=%22none%22 stroke=%22%23818794%22 stroke-width=%222%22><path d=%22M2 4l4 4 4-4%22/></svg>');background-repeat:no-repeat;background-position:right center">${libOptions(current)}</select>`;
+}
+
+function exerciseEl(ex, opts){
+  opts=opts||{};
+  const free=!!opts.freestyle;   // custom item (freestyle body or fixed extras)
+  const swap=!!opts.swap;        // prescribed fixed exercise (name swappable)
+  const dropdown = free || swap;
+  const card=document.createElement("div"); card.className="exCard";
+  if(!free && ex.sets.every(x=>x.done)) card.classList.add("done");
+
+  const label = (free) ? (ex.targetReps? `${ex.sets.length} × ${ex.targetReps}` : `${ex.sets.length} sets`)
+                       : `${ex.targetSets} × ${ex.targetReps}`;
+  const nameHtml = dropdown
+    ? nameSelect(ex.name)
+    : `<span class="exName" style="color:var(--chalk)">${esc(ex.name)}</span>`;
+  const lastLine = (!free && ex.last && ex.last.length)
+    ? `<div style="color:var(--faint);font-size:11px;margin-bottom:10px">Last time: ${ex.last.map(s=>s.w||"–").join(" · ")} ${S.session.unit}</div>`
+    : `<div style="height:6px"></div>`;
+
+  card.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;color:var(--faint)">${I.dumb}${nameHtml}</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span data-label style="color:var(--muted);font-size:12px;white-space:nowrap">${label}</span>
+        ${free?`<button data-remove aria-label="Remove exercise" style="background:transparent;border:none;color:var(--faint);padding:2px">${I.x}</button>`:""}
+      </div>
+    </div>${lastLine}
+    <div class="setRows" style="display:flex;flex-direction:column;gap:8px"></div>
+    ${free?`<div style="display:flex;gap:8px;margin-top:10px">
+      <button data-addset class="btnGhost" style="flex:1;padding:8px">＋ Set</button>
+      <button data-delset class="btnGhost" style="flex:1;padding:8px">− Set</button>
+    </div>`:""}
+    <div data-addnew style="display:none;gap:8px;margin-top:10px">
+      <input data-newname class="field" placeholder="New exercise name" style="flex:1;font-size:16px">
+      <button data-newadd class="btnPrimary">Add</button>
+    </div>`;
+
+  const rowsWrap=card.querySelector(".setRows");
+  ex.sets.forEach((st,si)=> rowsWrap.appendChild(setRowEl(ex,si,card)));
+
+  if(dropdown){
+    const sel=card.querySelector("[data-name]");
+    const addRow=card.querySelector("[data-addnew]");
+    sel.onchange=()=>{
+      if(sel.value==="__add__"){
+        addRow.style.display="flex";
+        const inp=addRow.querySelector("[data-newname]"); inp.value=""; inp.focus();
+        return;
+      }
+      applyExerciseName(ex, sel.value, {free, swap}); saveDraft();
+      const nc=exerciseEl(ex,opts); card.replaceWith(nc); updateProgress();
+    };
+    const addBtn=card.querySelector("[data-newadd]");
+    const doAdd=()=>{
+      const nm=addCustomExercise(card.querySelector("[data-newname]").value);
+      if(!nm){ return; }
+      applyExerciseName(ex, nm, {free, swap}); saveDraft();
+      const nc=exerciseEl(ex,opts); card.replaceWith(nc); updateProgress();
+    };
+    addBtn.onclick=doAdd;
+    card.querySelector("[data-newname]").addEventListener("keydown",e=>{ if(e.key==="Enter") doAdd(); });
+  }
+
+  if(free){
+    card.querySelector("[data-remove]").onclick=opts.onRemove;
+    card.querySelector("[data-addset]").onclick=()=>{
+      ex.sets.push({w:"",r:ex.targetReps||"",done:false,af:true}); saveDraft();
+      const nc=exerciseEl(ex,opts); card.replaceWith(nc); updateProgress();
+    };
+    card.querySelector("[data-delset]").onclick=()=>{
+      if(ex.sets.length>1){ ex.sets.pop(); saveDraft(); const nc=exerciseEl(ex,opts); card.replaceWith(nc); updateProgress(); }
+    };
+  }
+  return card;
+}
+
+/* apply a chosen/added name, prefilling from history where sensible */
+function applyExerciseName(ex, name, o){
+  ex.name=name;
+  const last=lastSetsForExercise(name);
+  if(o.swap){
+    // keep prescribed set count & target reps; prefill weights from history
+    ex.last = last;
+    ex.sets = ex.sets.map((st,i)=>({
+      w: last&&last[i]!=null? String(last[i].w??"") : "",
+      r: last&&last[i]!=null? String(last[i].r??ex.targetReps) : String(ex.targetReps),
+      done:false, af:i>0
+    }));
+  } else {
+    // freestyle: adopt last session's shape if available
+    if(last && last.length){
+      ex.sets = last.map((s,i)=>({ w:String(s.w??""), r:String(s.r??""), done:false, af:i>0 }));
+      ex.targetReps = last[0] && last[0].r!=null ? String(last[0].r) : ex.targetReps;
+    }
+  }
+}
+
+function cardioEl(kind,data){
+  const warm=kind==="warmup";
+  return cardioBlockEl(data, { title: warm?"Warm-up cardio":"Steady-state cardio",
+    icon: warm?I.flame:I.foot, accent: warm?"var(--coral)":"var(--steel)",
+    placeholder: warm?"e.g. treadmill · 6.0":"e.g. incline walk 12% · 5.5",
+    nameEditable:false, removable:false });
+}
+
+function updateProgress(){
+  const s=S.session;
+  const exArr=[], cardioArr=[];
+  if(s.day==="Freestyle"){
+    s.items.forEach(i=>{ (i.type==="exercise"?exArr:cardioArr).push(i); });
+  } else {
+    (s.exercises||[]).forEach(e=>exArr.push(e));
+    (s.extras||[]).forEach(i=>{ (i.type==="exercise"?exArr:cardioArr).push(i); });
+  }
+  let total=0, done=0;
+  exArr.forEach(e=>{ total+=e.sets.length; done+=e.sets.filter(x=>x.done).length; });
+  cardioArr.forEach(c=>{ total+=1; if(Number(c.min)>0) done+=1; });
+  const pct= total? Math.round(done/total*100):0;
+  const f=document.getElementById("progFill"); if(f) f.style.width=pct+"%";
+  const t=document.getElementById("progTxt"); if(t) t.textContent=done+" / "+total;
+  const p=document.getElementById("progPct"); if(p) p.textContent=pct+"%";
+}
+
+/* rest count-up pill */
+function startRest(){
+  S.rest=0; renderRest();
+  clearInterval(S.restTimer);
+  S.restTimer=setInterval(()=>{ S.rest++; renderRest(); },1000);
+}
+function stopRest(){ clearInterval(S.restTimer); S.rest=null; const p=document.getElementById("restPill"); if(p) p.remove(); }
+function renderRest(){
+  let p=document.getElementById("restPill");
+  if(S.rest===null){ if(p)p.remove(); return; }
+  if(!p){ p=document.createElement("button"); p.id="restPill"; p.className="restPill"; p.onclick=stopRest; document.body.appendChild(p); }
+  const m=Math.floor(S.rest/60), sec=String(S.rest%60).padStart(2,"0");
+  p.innerHTML=`${I.clock}<span>Rest ${m}:${sec}</span><span style="opacity:.7">${I.x}</span>`;
+}
+
+async function finishWorkout(){
+  stopRest();
+  const s=S.session;
+  const durationMin = s.startedAt? Math.max(1,Math.round((Date.now()-s.startedAt)/60000)) : null;
+  let clean;
+  if(s.day==="Freestyle"){
+    const exs=s.items.filter(i=>i.type==="exercise")
+      .map(e=>({ name:(e.name||"Exercise").trim()||"Exercise", sets:e.sets.filter(x=>x.w!==""||x.done).map(x=>({w:Number(x.w)||0,r:Number(x.r)||0})) }))
+      .filter(e=>e.sets.length>0);
+    const cardios=s.items.filter(i=>i.type==="cardio")
+      .map(c=>({ name:(c.name||"Cardio").trim()||"Cardio", min:c.min, note:c.note, intervals:c.intervals||[] }))
+      .filter(c=>c.min!=="" || (c.note&&c.note.trim()!=="") || (c.intervals&&c.intervals.length));
+    if(exs.length===0 && cardios.length===0){ toast("Add something before finishing"); return; }
+    clean={ id:s.id, phase:s.phase, day:s.day, date:s.date, unit:s.unit, exercises:exs, cardios:cardios, durationMin, synced:false };
+  } else {
+    const filt=sets=>sets.filter(x=>x.w!==""||x.done).map(x=>({ w:Number(x.w)||0, r:Number(x.r)||0 }));
+    const presc=s.exercises.map(e=>({ name:e.name, sets:filt(e.sets) })).filter(e=>e.sets.length>0);
+    const extraEx=(s.extras||[]).filter(i=>i.type==="exercise")
+      .map(e=>({ name:(e.name||"Exercise").trim()||"Exercise", sets:filt(e.sets) })).filter(e=>e.sets.length>0);
+    const extraCardio=(s.extras||[]).filter(i=>i.type==="cardio")
+      .map(c=>({ name:(c.name||"Cardio").trim()||"Cardio", min:c.min, note:c.note, intervals:c.intervals||[] }))
+      .filter(c=>c.min!=="" || (c.note&&c.note.trim()!=="") || (c.intervals&&c.intervals.length));
+    clean={ id:s.id, phase:s.phase, day:s.day, date:s.date, unit:s.unit, warmup:s.warmup, cardio:s.cardio,
+      exercises:[...presc,...extraEx], cardios:extraCardio, durationMin, synced:false };
+  }
+  const wKg = parseFloat(S.bodyweight)||0;
+  clean.estKcal = wKg>0 ? estimateSessionKcal(clean, wKg) : null;
+  S.history=[clean,...S.history]; LS.set("wl_history",S.history);
+  LS.del("wl_draft_"+s.phase+"_"+s.day);
+  S.session=null; S.day=null; S.screen="home"; render();
+  if(S.sheetUrl){
+    const ok=await postToSheet(workoutPayload(clean));
+    if(ok){ clean.synced=true; LS.set("wl_history",S.history); toast("Saved · synced to Sheet"); if(S.screen==="home") render(); }
+    else toast("Saved locally · will sync when online");
+  } else {
+    toast("Workout saved on this device");
+  }
+}
+
+function setStr(sets){ return sets.map(x=>`${x.w||0}×${x.r||0}`).join("   ·   "); }
+function historyDetail(s){
+  let rows="";
+  (s.exercises||[]).forEach(e=>{
+    rows+=`<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--hair)">
+      <span style="color:var(--chalk);font-size:13px;flex-shrink:0">${esc(e.name)}</span>
+      <span style="color:var(--muted);font-size:13px;font-family:var(--disp);text-align:right">${setStr(e.sets)}</span></div>`;
+  });
+  const cardio=[];
+  if(s.warmup && (s.warmup.min||s.warmup.note||(s.warmup.intervals&&s.warmup.intervals.length))) cardio.push(["Warm-up", s.warmup]);
+  if(s.cardios) s.cardios.forEach(c=>{ if(c.min||c.note||(c.intervals&&c.intervals.length)) cardio.push([c.name||"Cardio", c]); });
+  if(s.cardio && (s.cardio.min||s.cardio.note||(s.cardio.intervals&&s.cardio.intervals.length))) cardio.push(["Steady-state", s.cardio]);
+  cardio.forEach(([label,c])=>{
+    rows+=`<div style="padding:7px 0;border-top:1px solid var(--hair)">
+      <div style="display:flex;justify-content:space-between;gap:12px">
+        <span style="color:var(--steel);font-size:13px">${esc(label)}</span>
+        <span style="color:var(--muted);font-size:13px;text-align:right">${c.min?esc(c.min)+" min":""}${c.note?"  ·  "+esc(c.note):""}</span>
+      </div>
+      ${(c.intervals&&c.intervals.length)?`<div style="color:var(--faint);font-size:11px;margin-top:4px">${c.intervals.map((iv,i)=>`#${i+1} ${iv.min||0}min${iv.speed?" · "+iv.speed+"km/h":""}${iv.incline?" · "+iv.incline+"%":""}`).join("   ")}</div>`:""}
+    </div>`;
+  });
+  if(!rows) rows=`<div style="color:var(--faint);font-size:13px;padding:7px 0">No detail recorded.</div>`;
+  const unitNote = (s.exercises&&s.exercises.length)? `<div style="color:var(--faint);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-top:8px">Weight × reps · ${esc(s.unit)}</div>`:"";
+  const footer = (s.durationMin!=null || s.estKcal!=null)
+    ? `<div style="display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid var(--hair)">
+        ${s.durationMin!=null?`<div><span style="color:var(--chalk);font-family:var(--disp);font-weight:700">${s.durationMin}</span> <span style="color:var(--faint);font-size:11px">min session</span></div>`:""}
+        ${s.estKcal!=null?`<div><span style="color:var(--brass);font-family:var(--disp);font-weight:700">${s.estKcal}</span> <span style="color:var(--faint);font-size:11px">est. kcal</span></div>`:""}
+      </div>` : "";
+  return `<div class="histDetail" style="display:none;margin-top:10px">${unitNote}${rows}${footer}</div>`;
+}
+
+/* ===================== CHARTS (lightweight inline SVG) ===================== */
+function lineChartSVG(vals, opts){
+  opts=opts||{};
+  const w=320,h=110,pad=10;
+  const nums=vals.filter(v=>v!=null&&!isNaN(v));
+  if(nums.length<2) return `<div style="color:var(--faint);font-size:12px;text-align:center;padding:30px 0">Not enough data yet — need at least 2 points</div>`;
+  const min=Math.min(...nums), max=Math.max(...nums), range=(max-min)||1;
+  const n=vals.length, stepX=n>1?(w-2*pad)/(n-1):0;
+  let path="", dots="";
+  vals.forEach((v,i)=>{
+    if(v==null||isNaN(v)) return;
+    const x=pad+i*stepX, y=h-pad-((v-min)/range)*(h-2*pad);
+    path += (path?"L":"M")+x.toFixed(1)+","+y.toFixed(1)+" ";
+    dots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="${opts.color||HEX.brass}"/>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px;display:block">
+    <path d="${path.trim()}" fill="none" stroke="${opts.color||HEX.brass}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`;
+}
+function barChartSVG(vals, labels, opts){
+  opts=opts||{};
+  const w=320,h=110,pad=6,gap=6,labelH=14;
+  const n=vals.length;
+  if(n===0) return `<div style="color:var(--faint);font-size:12px;text-align:center;padding:30px 0">Not enough data yet</div>`;
+  const max=Math.max(1,...vals);
+  const bw=(w-2*pad-(n-1)*gap)/n;
+  let bars="";
+  vals.forEach((v,i)=>{
+    const bh=Math.max(2,(v/max)*(h-2*pad-labelH));
+    const x=pad+i*(bw+gap), y=h-pad-labelH-bh;
+    bars+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${opts.color||HEX.brass}"/>`;
+    if(labels&&labels[i]) bars+=`<text x="${(x+bw/2).toFixed(1)}" y="${h-2}" font-size="8" fill="${HEX.faint}" text-anchor="middle">${esc(labels[i])}</text>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px;display:block">${bars}</svg>`;
+}
+function isoWeekKey(dateStr){
+  const d=new Date(dateStr+"T00:00:00"); const day=(d.getDay()+6)%7;
+  d.setDate(d.getDate()-day); return d.toISOString().slice(0,10);
+}
+function weekLabel(mondayKey){ return new Date(mondayKey+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short"}); }
+function historyExerciseNames(){
+  const set={}; S.history.forEach(s=>(s.exercises||[]).forEach(e=>set[e.name]=true));
+  return Object.keys(set).sort((a,b)=>a.toLowerCase()<b.toLowerCase()?-1:1);
+}
+function liftProgression(name){
+  const pts=[];
+  [...S.history].reverse().forEach(s=>{
+    const e=(s.exercises||[]).find(x=>x.name===name);
+    if(e && e.sets.length) pts.push({date:s.date, top:Math.max(...e.sets.map(x=>x.w))});
+  });
+  return pts.slice(-15);
+}
+
+function renderDashboard(root){
+  const wKg=parseFloat(S.bodyweight)||0;
+  const names=historyExerciseNames();
+  if(!dashboardLift || !names.includes(dashboardLift)) dashboardLift = names.length? names[0] : null;
+  const totalSessions=S.history.length;
+  const weekCount=S.history.filter(s=>daysSince(s.date)<7).length;
+
+  const ci=S.checkins.slice(-12);
+  const hrPts=ci.map(c=>c.hr!=null?c.hr:null);
+  const hasHr=hrPts.some(v=>v!=null);
+
+  let kcalBox;
+  if(wKg>0){
+    const byWeek={};
+    S.history.forEach(s=>{ const k=isoWeekKey(s.date); const kcal=s.estKcal!=null?s.estKcal:estimateSessionKcal(s,wKg); byWeek[k]=(byWeek[k]||0)+(kcal||0); });
+    const weeks=Object.keys(byWeek).sort().slice(-8);
+    kcalBox = barChartSVG(weeks.map(w=>Math.round(byWeek[w])), weeks.map(weekLabel), {color:HEX.coral});
+  } else {
+    kcalBox = `<div style="color:var(--faint);font-size:12px;text-align:center;padding:20px 0">Set your body weight in Settings to see this</div>`;
+  }
+
+  const prog = dashboardLift? liftProgression(dashboardLift) : [];
+
+  root.innerHTML=`
+    <div class="stickyHead"><div style="display:flex;align-items:center;gap:10px;padding:14px 16px">
+      <button class="iconBtn" data-back>${I.back}</button>
+      <div style="font-family:var(--disp);font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Dashboard</div>
+    </div></div>
+    <div style="padding:16px">
+      <div style="display:flex;gap:22px;margin-bottom:16px;flex-wrap:wrap">
+        <div><div class="statVal" style="font-size:22px">${totalSessions}</div><div class="statLbl">Total sessions</div></div>
+        <div><div class="statVal" style="font-size:22px;color:${weekCount>=3?"var(--sage)":"var(--chalk)"}">${weekCount}</div><div class="statLbl">This week</div></div>
+        ${wKg>0?`<div><div class="statVal" style="font-size:22px">${wKg}</div><div class="statLbl">Body weight (kg)</div></div>`:""}
+      </div>
+
+      <div class="setupBox">
+        <div style="font-family:var(--disp);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">Weight trend</div>
+        <div style="color:var(--faint);font-size:11px;margin-bottom:8px">From your check-ins</div>
+        ${S.checkins.length? lineChartSVG(ci.map(c=>c.weight),{color:HEX.brass}) : `<div style="color:var(--faint);font-size:12px;text-align:center;padding:30px 0">Log a check-in to start this chart</div>`}
+      </div>
+
+      ${hasHr?`<div class="setupBox">
+        <div style="font-family:var(--disp);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">Resting heart rate</div>
+        <div style="color:var(--faint);font-size:11px;margin-bottom:8px">bpm, from check-ins</div>
+        ${lineChartSVG(hrPts,{color:HEX.coral})}
+      </div>`:""}
+
+      <div class="setupBox">
+        <div style="font-family:var(--disp);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">Estimated calories / week</div>
+        <div style="color:var(--faint);font-size:11px;margin-bottom:8px">MET-based estimate, last 8 weeks</div>
+        ${kcalBox}
+      </div>
+
+      <div class="setupBox">
+        <div style="font-family:var(--disp);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Lift progression</div>
+        ${names.length? `<select id="liftSel" class="field" style="margin-bottom:10px">
+          ${names.map(n=>`<option value="${esc(n)}" ${n===dashboardLift?"selected":""}>${esc(n)}</option>`).join("")}
+        </select>
+        ${prog.length? lineChartSVG(prog.map(p=>p.top),{color:HEX.sage}) : `<div style="color:var(--faint);font-size:12px;text-align:center;padding:20px 0">No history for this exercise yet</div>`}
+        ${prog.length?`<div style="color:var(--faint);font-size:11px;margin-top:6px">Top set per session · ${prog.length} logged · ${S.unit}</div>`:""}`
+        : `<div style="color:var(--faint);font-size:12px">Log a workout to see progression here</div>`}
+      </div>
+    </div>`;
+  root.querySelector("[data-back]").onclick=()=>{ S.screen="home"; render(); };
+  const liftSel=root.querySelector("#liftSel");
+  if(liftSel) liftSel.onchange=()=>{ dashboardLift=liftSel.value; renderDashboard(root); };
+}
+
+function renderHistory(root){
+  const caret=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+  root.innerHTML=`
+    <div class="stickyHead"><div style="display:flex;align-items:center;gap:10px;padding:14px 16px">
+      <button class="iconBtn" data-back>${I.back}</button>
+      <div style="font-family:var(--disp);font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">History</div>
+    </div></div>
+    <div style="padding:16px">
+      ${S.history.length===0? `<div style="color:var(--muted);text-align:center;margin-top:60px;font-size:14px">Nothing logged yet.<br>Your finished workouts collect here.</div>` :
+      S.history.map((s,idx)=>{
+        const exs=s.exercises||[];
+        const tops=exs.map(e=>Math.max(0,...e.sets.map(x=>x.w)));
+        const best=Math.max(0,...tops,0);
+        const vol=exs.reduce((t,e)=>t+e.sets.reduce((a,x)=>a+x.w*x.r,0),0);
+        let cmin=0;
+        if(s.cardios) s.cardios.forEach(c=>cmin+=Number(c.min)||0);
+        if(s.warmup) cmin+=Number(s.warmup.min)||0;
+        if(s.cardio) cmin+=Number(s.cardio.min)||0;
+        const title = s.day==="Freestyle" ? "Freestyle" : `Phase ${s.phase} · ${esc(s.day)}`;
+        return `<div class="histCard" data-card="${idx}" style="cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-family:var(--disp);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">${title}</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="color:var(--faint);font-size:12px">${!s.synced?'<span class="syncDot" style="background:var(--coral)"></span>':''}${fmtDate(s.date)}</span>
+              <span class="caret" style="color:var(--faint);display:flex;transition:transform .15s">${caret}</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:18px;margin-top:8px;flex-wrap:wrap">
+            ${best>0?`<div><div style="display:flex;align-items:center;gap:4px;color:var(--brass)">${I.trophy}<span class="statVal" style="color:var(--chalk)">${best} ${s.unit}</span></div><div class="statLbl">Top set</div></div>`:""}
+            ${vol>0?`<div><div class="statVal">${Math.round(vol).toLocaleString()} ${s.unit}</div><div class="statLbl">Volume</div></div>`:""}
+            ${exs.length>0?`<div><div class="statVal">${exs.length}</div><div class="statLbl">Lifts</div></div>`:""}
+            ${cmin>0?`<div><div class="statVal">${cmin}m</div><div class="statLbl">Cardio</div></div>`:""}
+            ${s.estKcal!=null?`<div><div class="statVal" style="color:var(--brass)">${s.estKcal}</div><div class="statLbl">Est. kcal</div></div>`:""}
+          </div>
+          ${historyDetail(s)}</div>`;
+      }).join("")}
+    </div>`;
+  root.querySelector("[data-back]").onclick=()=>{ S.screen="home"; render(); };
+  root.querySelectorAll("[data-card]").forEach(card=>{
+    card.onclick=()=>{
+      const d=card.querySelector(".histDetail"), c=card.querySelector(".caret");
+      const open=d.style.display!=="none";
+      d.style.display=open?"none":"block";
+      if(c) c.style.transform=open?"none":"rotate(180deg)";
+    };
+  });
+}
+
+function saveCheckin(weight, hr){
+  const w=parseFloat(weight); if(!w || w<=0){ toast("Enter a valid weight"); return false; }
+  const today=todayKey();
+  const existing=S.checkins.find(c=>c.date===today);
+  if(existing){ existing.weight=w; existing.hr=hr?parseFloat(hr):null; existing.synced=false; }
+  else S.checkins.push({ id:uid(), date:today, weight:w, hr:hr?parseFloat(hr):null, synced:false });
+  S.checkins.sort((a,b)=> a.date<b.date?-1:1);
+  S.bodyweight=String(w); LS.setRaw("wl_bodyweight",S.bodyweight);
+  LS.set("wl_checkins",S.checkins);
+  toast("Check-in saved");
+  syncCheckins();
+  return true;
+}
+
+function renderCheckin(root){
+  const last=S.checkins[S.checkins.length-1];
+  root.innerHTML=`
+    <div class="stickyHead"><div style="display:flex;align-items:center;gap:10px;padding:14px 16px">
+      <button class="iconBtn" data-back>${I.back}</button>
+      <div style="font-family:var(--disp);font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Weekly check-in</div>
+    </div></div>
+    <div style="padding:16px">
+      <p style="color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 16px">
+        This is an in-app reminder — the home screen flags it when 7+ days have passed. It can't send a phone notification while the app is closed; that needs a backend server, which isn't set up yet.
+      </p>
+      <div class="setupBox">
+        <div style="display:flex;gap:10px;margin-bottom:10px">
+          <div style="flex:1">
+            <div class="sectionLabel" style="margin-bottom:6px">Weight (kg)</div>
+            <input id="ciWeight" class="field" inputmode="decimal" placeholder="0.0" value="${esc(last?last.weight:(S.bodyweight||""))}">
+          </div>
+          <div style="flex:1">
+            <div class="sectionLabel" style="margin-bottom:6px">Resting HR <span style="text-transform:none;font-weight:400">(optional)</span></div>
+            <input id="ciHr" class="field" inputmode="numeric" placeholder="bpm" value="${last&&last.hr?last.hr:""}">
+          </div>
+        </div>
+        <button class="btnPrimary" id="ciSave" style="width:100%">Save check-in</button>
+      </div>
+
+      <div class="sectionLabel" style="margin:18px 0 10px">Recent check-ins</div>
+      ${S.checkins.length===0? `<div style="color:var(--faint);font-size:13px">No check-ins yet.</div>` :
+        [...S.checkins].reverse().slice(0,10).map(c=>`
+        <div class="histCard" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px">
+          <div>
+            <div style="font-family:var(--disp);font-size:15px;font-weight:700">${c.weight} kg${c.hr?`  ·  ${c.hr} bpm`:""}</div>
+            <div style="color:var(--faint);font-size:11px;margin-top:1px">${fmtDate(c.date)}</div>
+          </div>
+          <button data-del="${c.id}" style="background:transparent;border:none;color:var(--faint);padding:4px">${I.x}</button>
+        </div>`).join("")}
+    </div>`;
+  root.querySelector("[data-back]").onclick=()=>{ S.screen="home"; render(); };
+  root.querySelector("#ciSave").onclick=()=>{
+    const w=root.querySelector("#ciWeight").value, hr=root.querySelector("#ciHr").value;
+    if(saveCheckin(w,hr)){ S.screen="home"; render(); }
+  };
+  root.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+    S.checkins=S.checkins.filter(c=>c.id!==b.dataset.del); LS.set("wl_checkins",S.checkins); render();
+  });
+}
+
+function renderSettings(root){
+  const pending=S.history.filter(w=>!w.synced).length;
+  root.innerHTML=`
+    <div class="stickyHead"><div style="display:flex;align-items:center;gap:10px;padding:14px 16px">
+      <button class="iconBtn" data-back>${I.back}</button>
+      <div style="font-family:var(--disp);font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Settings</div>
+    </div></div>
+    <div style="padding:16px">
+
+      <div class="setupBox">
+        <div style="font-family:var(--disp);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Body weight &amp; calorie estimate</div>
+        <p style="color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 12px">Calorie estimates need your bodyweight. Always in kg here, independent of the kg/lb toggle used for lifting weights — this keeps the MET math unambiguous. It's also updated automatically whenever you log a weekly check-in.</p>
+        <input class="field" id="bwInput" inputmode="decimal" placeholder="e.g. 78" value="${esc(S.bodyweight)}">
+        <p style="color:var(--faint);font-size:11px;line-height:1.5;margin:10px 0 0">Estimates use standard MET values for resistance work, and the ACSM treadmill formula (from speed + incline) for cardio intervals — not data from a wearable, so treat them as ballpark, not precise.</p>
+      </div>
+
+      <div class="setupBox">
+        <div style="font-family:var(--disp);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Google Sheet backup</div>
+        <p style="color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 12px">Paste the web-app link from your Apps Script deployment. Every finished workout is appended to your sheet as one row per set.</p>
+        <input class="field" id="sheetUrl" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(S.sheetUrl)}">
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btnPrimary" id="saveUrl" style="flex:1">Save link</button>
+          <button class="btnGhost" id="resync" style="flex:1">Re-sync all ${pending?`(${pending})`:""}</button>
+        </div>
+        <div style="color:var(--faint);font-size:12px;margin-top:8px">${S.sheetUrl? (pending? pending+" workout(s) waiting to sync":"All workouts synced"):"No sheet linked yet — the app still saves locally."}</div>
+      </div>
+
+      <div class="setupBox">
+        <div style="font-family:var(--disp);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">First-time setup</div>
+        <div class="step"><div class="stepN">1</div><div style="font-size:13px;color:var(--muted);line-height:1.5">Open <b style="color:var(--chalk)">sheets.new</b> to create a blank Google Sheet. Name it anything.</div></div>
+        <div class="step"><div class="stepN">2</div><div style="font-size:13px;color:var(--muted);line-height:1.5">In that sheet: <b style="color:var(--chalk)">Extensions → Apps Script</b>. Delete whatever's there, paste the code below, and Save.</div></div>
+        <div class="step"><div class="stepN">3</div><div style="font-size:13px;color:var(--muted);line-height:1.5"><b style="color:var(--chalk)">Deploy → New deployment → Web app</b>. Set <i>Execute as: Me</i>, <i>Who has access: Anyone</i>. Authorise when prompted.</div></div>
+        <div class="step"><div class="stepN">4</div><div style="font-size:13px;color:var(--muted);line-height:1.5">Copy the <b style="color:var(--chalk)">Web app URL</b> it gives you, paste it in the box above, and hit Save link.</div></div>
+        <button class="btnGhost" id="copyCode" style="width:100%;margin:8px 0 10px">Copy the Apps Script code</button>
+        <textarea class="codeArea" id="gsCode" readonly></textarea>
+      </div>
+
+      <div class="setupBox">
+        <div style="font-family:var(--disp);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Manual backup</div>
+        <p style="color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 12px">A safety net for switching phones, separate from the sheet. Export a file, keep it anywhere, import it on the new device.</p>
+        <div style="display:flex;gap:8px">
+          <button class="btnPrimary" id="exp" style="flex:1">Export backup</button>
+          <label class="btnGhost" style="flex:1;text-align:center">Import backup<input type="file" id="imp" accept="application/json,.json" style="display:none"></label>
+        </div>
+      </div>
+
+    </div>`;
+  root.querySelector("[data-back]").onclick=()=>{ S.screen="home"; render(); };
+  const bwIn=root.querySelector("#bwInput");
+  bwIn.onchange=()=>{
+    const v=bwIn.value.replace(/[^0-9.]/g,""); bwIn.value=v;
+    S.bodyweight=v; LS.setRaw("wl_bodyweight",v);
+    toast(v?"Body weight saved":"Body weight cleared");
+  };
+  root.querySelector("#gsCode").value=APPS_SCRIPT;
+  root.querySelector("#saveUrl").onclick=()=>{
+    const v=root.querySelector("#sheetUrl").value.trim();
+    S.sheetUrl=v; LS.setRaw("wl_sheet_url",v);
+    toast(v?"Sheet linked":"Sheet link cleared"); if(v) syncPending(); render();
+  };
+  root.querySelector("#resync").onclick=resyncAll;
+  root.querySelector("#copyCode").onclick=()=>{
+    const ta=root.querySelector("#gsCode"); ta.select(); ta.setSelectionRange(0,99999);
+    try{ navigator.clipboard.writeText(APPS_SCRIPT); }catch(e){ document.execCommand("copy"); }
+    toast("Apps Script code copied");
+  };
+  root.querySelector("#exp").onclick=exportBackup;
+  root.querySelector("#imp").onchange=e=>{ if(e.target.files[0]) importBackup(e.target.files[0]); };
+}
+
+/* ===================== APPS SCRIPT (shown in Settings) ===================== */
+const APPS_SCRIPT = `// Iron & Chalk — workout + check-in sheet endpoint
+const SHEET_NAME = 'Workouts';
+const HEADERS = ['Logged At','Workout ID','Date','Phase','Day','Focus','Duration (min)','Est Kcal','Type','Exercise','Set','Weight','Unit','Reps','Minutes','Speed','Incline','Note'];
+const CHECKIN_SHEET = 'Checkins';
+const CHECKIN_HEADERS = ['Logged At','Checkin ID','Date','Weight (kg)','Resting HR'];
+
+function doGet() {
+  return ContentService.createTextOutput('Iron & Chalk endpoint is live.');
+}
+
+function ensureSheet(ss, name, headers) {
+  let sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(headers);
+    sh.getRange(1,1,1,headers.length).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const data = JSON.parse(e.postData.contents);
+
+    if (data && data.kind === 'checkins') {
+      const sh = ensureSheet(ss, CHECKIN_SHEET, CHECKIN_HEADERS);
+      const items = data.items || [];
+      const ids = items.map(function(c){ return String(c.id); });
+      const last = sh.getLastRow();
+      if (last > 1) {
+        const col = sh.getRange(2,2,last-1,1).getValues();
+        for (var r = col.length-1; r >= 0; r--) {
+          if (ids.indexOf(String(col[r][0])) !== -1) sh.deleteRow(r+2);
+        }
+      }
+      const now = new Date();
+      const rows = items.map(function(c){ return [now, c.id, c.date, c.weight, c.hr || '']; });
+      if (rows.length) sh.getRange(sh.getLastRow()+1, 1, rows.length, CHECKIN_HEADERS.length).setValues(rows);
+      return ContentService.createTextOutput(JSON.stringify({ok:true, added:rows.length}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const sh = ensureSheet(ss, SHEET_NAME, HEADERS);
+    const workouts = Array.isArray(data) ? data : [data];
+    const ids = workouts.map(function(w){ return String(w.id); });
+
+    const last = sh.getLastRow();
+    if (last > 1) {
+      const col = sh.getRange(2,2,last-1,1).getValues();
+      for (var r = col.length-1; r >= 0; r--) {
+        if (ids.indexOf(String(col[r][0])) !== -1) sh.deleteRow(r+2);
+      }
+    }
+
+    const now = new Date();
+    const rows = [];
+    function cardioRows(base, label, block) {
+      if (!block) return;
+      if (block.intervals && block.intervals.length) {
+        block.intervals.forEach(function(iv, i) {
+          rows.push(base.concat(['interval', label, i+1, '', '', '', iv.min||'', iv.speed||'', iv.incline||'', '']));
+        });
+        if (block.note) rows.push(base.concat(['cardio-note', label, '', '', '', '', '', '', '', block.note]));
+      } else if (block.min || block.note) {
+        rows.push(base.concat(['cardio', label, '', '', '', '', block.min||'', '', '', block.note||'']));
+      }
+    }
+    workouts.forEach(function(w){
+      const base = [now, w.id, w.date, w.phase, w.day, w.focus || '', w.durationMin || '', w.estKcal || ''];
+      cardioRows(base, 'Warm-up', w.warmup);
+      (w.exercises||[]).forEach(function(ex){
+        (ex.sets||[]).forEach(function(s,i){
+          rows.push(base.concat(['set', ex.name, i+1, s.w, w.unit, s.r, '', '', '', '']));
+        });
+      });
+      (w.cardios||[]).forEach(function(c){ cardioRows(base, c.name||'Cardio', c); });
+      cardioRows(base, 'Steady-state', w.cardio);
+    });
+    if (rows.length) sh.getRange(sh.getLastRow()+1, 1, rows.length, HEADERS.length).setValues(rows);
+
+    return ContentService.createTextOutput(JSON.stringify({ok:true, added:rows.length}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ok:false, error:String(err)}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    try { lock.releaseLock(); } catch (e2) {}
+  }
+}`;
+
+/* ===================== BOOT ===================== */
+async function boot(){
+  const all = await Backend.loadAll();
+  Object.keys(all).forEach(function(k){ cache[k]=all[k]; });
+  S.phase      = LS.get("wl_phase", 1);
+  S.history    = LS.get("wl_history", []);
+  S.unit       = LS.raw("wl_unit","kg");
+  S.sheetUrl   = LS.raw("wl_sheet_url","");
+  S.bodyweight = LS.raw("wl_bodyweight","");
+  S.checkins   = LS.get("wl_checkins", []);
+  customExercises = LS.get("wl_custom_exercises", []);
+  render();
+  syncPending();
+  syncCheckins();
+}
+window.addEventListener("online", ()=>{ syncPending(); syncCheckins(); });
+boot();
+</script>
+</body>
+</html>
