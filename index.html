@@ -115,7 +115,7 @@ const I = {
 const HEX = { brass:"#F2A93B", coral:"#F2704B", sage:"#74BE97", steel:"#5B7CC4", faint:"#565C68", chalk:"#F1EFE9" };
 
 /* ===================== PLAN ===================== */
-const DAY_FOCUS = { "Day 1":"Back & Biceps", "Day 2":"Chest · Shoulders · Triceps", "Day 3":"Legs", "Freestyle":"Cardio & extras" };
+const DAY_FOCUS = { "Day 1":"Back & Biceps", "Day 2":"Chest · Shoulders · Triceps", "Day 3":"Legs", "Cardio A":"Kettlebell flow", "Cardio B":"Ropes + aerobic base", "Freestyle":"Cardio & extras" };
 const PLAN = {
  1:{"Day 1":[["Neutral-grip lat pulldown",3,12],["Hamstring curl",3,15],["Lats pull down",3,12],["Rear delt flies",3,15],["Rack pull",3,8],["Single arm lats pull down",3,12],["Seated row (wide)",3,12],["Bicep curl",3,15]],
     "Day 2":[["Flat bench press",3,12],["Leg extension",3,15],["Incline db press",3,12],["Body weight squats",3,15],["Seated shoulder press",3,12],["Front raise",3,15],["Lateral raise",3,15],["Tricep rope extension",3,15]],
@@ -144,6 +144,52 @@ const PHASE_NOTE = {
  5:"Single lifts, no super-sets. Focus on getting the strength up.",
  6:"Single lifts. Low reps on the main lift — go heavy, chase strength.",
 };
+
+/* ===================== CARDIO DAYS (Cardio A / Cardio B) ===================== */
+/* Steady, controlled effort — no HIIT, no all-out intervals. Each day has three
+   options. In phases 5–6 every option switches to a lighter version so the
+   heavy lifting stays fresh. Each segment is [name, target minutes, guide]. */
+const CARDIO_DAYS = {
+ "Cardio A":{ focus:"Kettlebell flow", tag:"About 40 min", logFields:[["rounds","Rounds","numeric"],["kb","Kettlebell","decimal"],["rpe","Effort 1–10","numeric"]], options:[
+  { name:"Kettlebell flow", blurb:"Smooth swing → clean → squat → press, repeated at a conversational pace.",
+    build:lite=>{ const r=lite?3:4; return [
+      ["Warm-up",5,"Hip hinges, goblet squats, arm circles, light swings."],
+      ["Flow rounds",lite?18:25,`${r} rounds. Each: 10 swings, 5 cleans per side, 5 goblet squats, 5 presses per side. Smooth pace; rest 1–2 min between rounds.${lite?" Lighter bell this phase.":""}`],
+      ["Cool-down",5,"Easy walk, hamstring and shoulder stretches."]]; } },
+  { name:"Carry circuit", blurb:"Swings, squats and loaded carries. Move steadily and rest as needed.",
+    build:lite=>{ const r=lite?3:5; return [
+      ["Warm-up",5,"Hip hinges, goblet squats, arm circles, light swings."],
+      ["Carry circuit",lite?15:25,`${r} rounds. Each: 10 swings → 40 m farmer carry → 8 goblet squats → 30 m suitcase carry. Steady pace.${lite?" Lighter bell this phase.":""}`],
+      ["Cool-down",5,"Easy walk, grip and shoulder stretches."]]; } },
+  { name:"Strength-endurance ladder", blurb:"Light-weight rep ladder with no clock pressure.",
+    build:lite=>[
+      ["Warm-up",5,"Hip hinges, goblet squats, arm circles, light swings."],
+      ["Rep ladder",lite?15:20,`Swings, rows and goblet squats on a 5-10-15-10-5 rep ladder at a light weight. Rest when you need to.${lite?" One pass only.":" Two passes if you feel good."}`],
+      ["Cool-down",5,"Easy walk, hamstring and shoulder stretches."]] }
+ ]},
+ "Cardio B":{ focus:"Ropes + aerobic base", tag:"About 45 min", logFields:[["rounds","Rounds","numeric"],["ropeOn","Rope work (s)","numeric"],["ropeOff","Rope rest (s)","numeric"],["rpe","Effort 1–10","numeric"]], options:[
+  { name:"Rope rhythm + zone 2", blurb:"Moderate rope waves, then steady zone 2 cardio.",
+    build:lite=>{ const r=lite?4:6; return [
+      ["Warm-up",5,"Easy bike or incline walk."],
+      ["Rope rhythm",r*1.5,`${r} rounds of 45 sec moderate rope waves, 45 sec easy rest. Moderate effort, not max slams.`],
+      ["Zone 2",lite?30:28,"Bike, incline walk or rower at a pace where you can still speak in full sentences."],
+      ["Cool-down",3,"Shoulder and calf stretches."]]; } },
+  { name:"Long zone 2 + mobility", blurb:"The lowest-stress option: long steady cardio and mobility.",
+    build:lite=>[
+      ["Warm-up",3,"Easy pace on your chosen machine."],
+      ["Zone 2",40,"Bike, incline walk or rower at a talk-test pace."],
+      ["Mobility",5,"Shoulder and hip mobility."]] },
+  { name:"Easy circuit", blurb:"Four stations at an easy pace, no hard efforts.",
+    build:lite=>{ const r=lite?2:3; return [
+      ["Warm-up",5,"Easy bike or incline walk."],
+      ["Easy circuit",r*8,`${r} rounds. Each: 2 min each of rope waves, rower, incline walk and plank. Easy pace throughout.`],
+      ["Cool-down",5,"Shoulder, hip and calf stretches."]]; } }
+ ]}
+};
+function buildCardioItems(day, optIdx, phase){
+  const opt = CARDIO_DAYS[day].options[optIdx] || CARDIO_DAYS[day].options[0];
+  return opt.build(phase>=5).map(([name,min,guide])=>({ type:"cardio", name, min:"", note:"", intervals:[], guide, target:String(min) }));
+}
 
 /* ===================== EXERCISE LIBRARY ===================== */
 /* Base list = every exercise across all phases/days. Custom additions are
@@ -326,6 +372,8 @@ function toast(msg){
 
 function buildSession(phase, day){
   if(day==="Freestyle") return { id:uid(), phase, day:"Freestyle", date:todayKey(), unit:S.unit, startedAt:Date.now(), items:[] };
+  if(CARDIO_DAYS[day]) return { id:uid(), phase, day, date:todayKey(), unit:S.unit, startedAt:Date.now(), cardioDay:true, option:0,
+    items:buildCardioItems(day,0,phase), log:{ rounds:"", kb:"", ropeOn:"", ropeOff:"", rpe:"" } };
   const prev = S.history.find(s=>s.phase===phase && s.day===day);
   const lastMap={}; if(prev) prev.exercises.forEach(e=>{ lastMap[e.name]=e.sets; });
   const exercises = PLAN[phase][day].map(([name,sets,reps])=>{
@@ -340,7 +388,7 @@ function buildSession(phase, day){
 function saveDraft(){
   if(!S.session) return;
   clearTimeout(S.draftTimer);
-  S.draftTimer=setTimeout(()=>{ LS.set("wl_draft_"+S.session.phase+"_"+S.session.day, S.session); },600);
+  S.draftTimer=setTimeout(()=>{ if(!S.session) return; LS.set("wl_draft_"+S.session.phase+"_"+S.session.day, S.session); },600);
 }
 function loadDraft(phase,day){
   const d = LS.get("wl_draft_"+phase+"_"+day, null);
@@ -354,6 +402,8 @@ function workoutPayload(w){
     durationMin:w.durationMin!=null?w.durationMin:"", estKcal:w.estKcal!=null?w.estKcal:"",
     exercises:(w.exercises||[]).map(e=>({ name:e.name, sets:e.sets.map(s=>({ w:Number(s.w)||0, r:Number(s.r)||0 })) })) };
   if(w.cardios) p.cardios=w.cardios;
+  if(w.cardioOption) p.cardioOption=w.cardioOption;
+  if(w.cardioLog) p.cardioLog=w.cardioLog;
   if(w.warmup) p.warmup=w.warmup;
   if(w.cardio) p.cardio=w.cardio;
   return p;
@@ -476,16 +526,20 @@ function renderHome(root){
     <section style="padding:12px 20px 28px">
       <div class="sectionLabel">Choose a day</div>
       <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
-        ${["Day 1","Day 2","Day 3"].map(d=>`
+        ${["Day 1","Cardio A","Day 2","Cardio B","Day 3"].map(d=>{
+          const cd=CARDIO_DAYS[d];
+          return `
           <button class="dayCard" data-day="${d}">
             <div style="display:flex;align-items:center;gap:14px">
-              <div class="dayNum">${d.split(" ")[1]}</div>
+              <div class="dayNum"${cd?' style="color:var(--steel)"':""}>${d.split(" ")[1]}</div>
               <div><div class="dayTitle">${d}</div><div style="color:var(--muted);font-size:13px;margin-top:2px">${DAY_FOCUS[d]}</div></div>
             </div>
             <div style="text-align:right;color:var(--faint);font-size:12px">
-              <div style="color:var(--brass);font-family:var(--disp);font-size:22px;font-weight:700">${PLAN[S.phase][d].length}</div>lifts
+              ${cd
+                ? `<div style="color:var(--steel);font-family:var(--disp);font-size:22px;font-weight:700">${cd.options.length}</div>options`
+                : `<div style="color:var(--brass);font-family:var(--disp);font-size:22px;font-weight:700">${PLAN[S.phase][d].length}</div>lifts`}
             </div>
-          </button>`).join("")}
+          </button>`; }).join("")}
         <button class="dayCard" data-day="Freestyle" style="border-style:dashed">
           <div style="display:flex;align-items:center;gap:14px">
             <div class="dayNum" style="color:var(--steel)">${I.foot}</div>
@@ -538,7 +592,13 @@ function renderWorkout(root){
 
   const body=root.querySelector("#wbody");
 
-  if(free){
+  if(s.cardioDay){
+    body.appendChild(cardioDayEl(s));
+    const items=document.createElement("div"); items.id="cardioItems";
+    body.appendChild(items);
+    renderItems(s.items, items);
+    body.appendChild(addButtons(s.items, "cardioItems"));
+  } else if(free){
     const items=document.createElement("div"); items.id="freeItems";
     body.appendChild(items);
     renderItems(s.items, items);
@@ -560,6 +620,41 @@ function renderWorkout(root){
   root.querySelector("[data-back]").onclick=()=>{ S.screen="home"; render(); };
   root.querySelector("[data-finish]").onclick=finishWorkout;
   updateProgress();
+}
+
+/* Overview card for Cardio A / B: option picker, prescription and a few log fields */
+function cardioDayEl(s){
+  const cd=CARDIO_DAYS[s.day], lite=s.phase>=5;
+  const opt=cd.options[s.option]||cd.options[0];
+  if(!s.log) s.log={ rounds:"", kb:"", ropeOn:"", ropeOff:"", rpe:"" };
+  const el=document.createElement("div"); el.className="cardioCard";
+  el.innerHTML=`
+    <div class="cardioTitle" style="color:var(--chalk)">${esc(cd.focus)}</div>
+    <div style="color:var(--muted);font-size:12px;line-height:1.5;margin:4px 0 12px">${esc(cd.tag)}${lite?" · lighter version for phases 5–6":""}. Steady effort, no all-out intervals: breathing elevated but controlled (about 5–6 out of 10).</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${cd.options.map((o,i)=>`
+        <button data-opt="${i}" class="btnGhost" style="text-align:left;${i===s.option?"border-color:var(--brass);color:var(--brass);":""}">
+          ${i+1}. ${esc(o.name)}<div style="color:var(--faint);font-size:11px;font-weight:400;margin-top:2px">${esc(o.blurb)}</div>
+        </button>`).join("")}
+    </div>
+    <div class="sectionLabel" style="margin-top:14px">Log</div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      ${cd.logFields.map(([k,label,mode])=>`
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;background:var(--raised);border:1px solid var(--hair);border-radius:11px;padding:8px 6px">
+          <input data-log="${k}" inputmode="${mode}" value="${esc(s.log[k]||"")}" placeholder="0" style="width:100%;background:transparent;border:none;color:var(--chalk);font-family:var(--disp);font-size:16px;font-weight:700;text-align:center">
+          <span style="color:var(--faint);font-size:9px;text-align:center">${esc(k==="kb"?"Kettlebell ("+s.unit+")":label)}</span>
+        </div>`).join("")}
+    </div>`;
+  el.querySelectorAll("[data-opt]").forEach(b=>b.onclick=()=>{
+    const idx=Number(b.dataset.opt); if(idx===s.option) return;
+    const logged=s.items.some(i=>Number(i.min)>0 || (i.intervals&&i.intervals.length));
+    if(logged && !confirm("Switching option replaces the cardio blocks below and clears the minutes you've entered. Continue?")) return;
+    s.option=idx; s.items=buildCardioItems(s.day, idx, s.phase); saveDraft(); render();
+  });
+  el.querySelectorAll("[data-log]").forEach(inp=>{
+    inp.oninput=()=>{ inp.value=inp.value.replace(/[^0-9.]/g,""); s.log[inp.dataset.log]=inp.value; saveDraft(); };
+  });
+  return el;
 }
 
 function addButtons(arr, containerId){
@@ -633,8 +728,9 @@ function cardioBlockEl(data, cfg){
       </div>
       ${cfg.removable?`<button data-remove aria-label="Remove" style="background:transparent;border:none;color:var(--faint);padding:2px;flex-shrink:0">${I.x}</button>`:""}
     </div>
+    ${data.guide?`<div style="color:var(--muted);font-size:12px;line-height:1.5;margin:-2px 0 10px">${esc(data.guide)}${data.target?` <span style="color:var(--faint)">Target ${esc(data.target)} min.</span>`:""}</div>`:""}
     <div data-simple style="display:${hasIv?"none":"flex"};gap:10px;align-items:stretch">
-      <div class="minWrap"><input class="minInput" inputmode="numeric" value="${esc(data.min)}" placeholder="0"><span style="color:var(--faint);font-size:10px">min</span></div>
+      <div class="minWrap"><input class="minInput" inputmode="numeric" value="${esc(data.min)}" placeholder="${esc(data.target||"0")}"><span style="color:var(--faint);font-size:10px">min</span></div>
       <input class="noteInput" data-note value="${esc(data.note)}" placeholder="${cfg.placeholder}">
     </div>
     <div data-ivblock style="display:${hasIv?"block":"none"}">
@@ -856,7 +952,7 @@ function cardioEl(kind,data){
 function updateProgress(){
   const s=S.session;
   const exArr=[], cardioArr=[];
-  if(s.day==="Freestyle"){
+  if(s.day==="Freestyle" || s.cardioDay){
     s.items.forEach(i=>{ (i.type==="exercise"?exArr:cardioArr).push(i); });
   } else {
     (s.exercises||[]).forEach(e=>exArr.push(e));
@@ -891,7 +987,7 @@ async function finishWorkout(){
   const s=S.session;
   const durationMin = s.startedAt? Math.max(1,Math.round((Date.now()-s.startedAt)/60000)) : null;
   let clean;
-  if(s.day==="Freestyle"){
+  if(s.day==="Freestyle" || s.cardioDay){
     const exs=s.items.filter(i=>i.type==="exercise")
       .map(e=>({ name:(e.name||"Exercise").trim()||"Exercise", sets:e.sets.filter(x=>x.w!==""||x.done).map(x=>({w:Number(x.w)||0,r:Number(x.r)||0})) }))
       .filter(e=>e.sets.length>0);
@@ -900,6 +996,10 @@ async function finishWorkout(){
       .filter(c=>c.min!=="" || (c.note&&c.note.trim()!=="") || (c.intervals&&c.intervals.length));
     if(exs.length===0 && cardios.length===0){ toast("Add something before finishing"); return; }
     clean={ id:s.id, phase:s.phase, day:s.day, date:s.date, unit:s.unit, exercises:exs, cardios:cardios, durationMin, synced:false };
+    if(s.cardioDay){
+      const opt=CARDIO_DAYS[s.day].options[s.option]||CARDIO_DAYS[s.day].options[0];
+      clean.cardioOption=opt.name; clean.cardioLog=s.log||{};
+    }
   } else {
     const filt=sets=>sets.filter(x=>x.w!==""||x.done).map(x=>({ w:Number(x.w)||0, r:Number(x.r)||0 }));
     const presc=s.exercises.map(e=>({ name:e.name, sets:filt(e.sets) })).filter(e=>e.sets.length>0);
@@ -946,6 +1046,16 @@ function historyDetail(s){
       ${(c.intervals&&c.intervals.length)?`<div style="color:var(--faint);font-size:11px;margin-top:4px">${c.intervals.map((iv,i)=>`#${i+1} ${iv.min||0}min${iv.speed?" · "+iv.speed+"km/h":""}${iv.incline?" · "+iv.incline+"%":""}`).join("   ")}</div>`:""}
     </div>`;
   });
+  if(s.cardioOption || s.cardioLog){
+    const L=s.cardioLog||{}, bits=[];
+    if(L.rounds) bits.push(L.rounds+" rounds");
+    if(L.kb) bits.push("KB "+L.kb+" "+(s.unit||"kg"));
+    if(L.ropeOn||L.ropeOff) bits.push("rope "+(L.ropeOn||0)+"s on / "+(L.ropeOff||0)+"s off");
+    if(L.rpe) bits.push("effort "+L.rpe+"/10");
+    rows=`<div style="padding:7px 0;border-top:1px solid var(--hair)">
+      <div style="color:var(--chalk);font-size:13px">${esc(s.cardioOption||"Cardio day")}</div>
+      ${bits.length?`<div style="color:var(--faint);font-size:11px;margin-top:4px">${esc(bits.join("  ·  "))}</div>`:""}</div>`+rows;
+  }
   if(!rows) rows=`<div style="color:var(--faint);font-size:13px;padding:7px 0">No detail recorded.</div>`;
   const unitNote = (s.exercises&&s.exercises.length)? `<div style="color:var(--faint);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-top:8px">Weight × reps · ${esc(s.unit)}</div>`:"";
   const footer = (s.durationMin!=null || s.estKcal!=null)
